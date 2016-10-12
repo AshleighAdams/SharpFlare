@@ -31,9 +31,9 @@ namespace SharpFlare
 				return 1;
 
 			if(Version)
-				Global.Message(Level.Normal, "SharpFlare v{0}.{1}", Major, Minor);
+				GlobalLogger.Message(Level.Normal, "SharpFlare v{0}.{1}", Major, Minor);
 			if(Help)
-				Global.Message(Level.Normal, "Help not impl.");
+				GlobalLogger.Message(Level.Normal, "Help not impl.");
 			if(Help || Version)
 				return 0;
 

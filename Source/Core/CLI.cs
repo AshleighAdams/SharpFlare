@@ -139,14 +139,14 @@ namespace SharpFlare
 				foreach(KeyValuePair<string, string> pair in opts)
 					if(!opts_okay.ContainsKey(pair.Key))
 					{
-						Global.Message(Level.Warning, "unknown command line option: --{0}", pair.Key);
+						GlobalLogger.Message(Level.Warning, "unknown command line option: --{0}", pair.Key);
 						okay = false;
 					}
 
 				foreach(char c in short_opts)
 					if(!shrt_okay.ContainsKey(c))
 					{
-						Global.Message(Level.Warning, "unknown command line flag: -{0}", c);
+						GlobalLogger.Message(Level.Warning, "unknown command line flag: -{0}", c);
 						okay = false;
 					}
 

@@ -49,7 +49,7 @@ namespace SharpFlare
 		}
 
 
-		public static class Global
+		public static class GlobalLogger
 		{
 			private static Sink sink = new Sink();
 			public static void Message(Level lvl, string msg)

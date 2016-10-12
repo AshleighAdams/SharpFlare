@@ -1,13 +1,15 @@
 default: build
 build: sharpflare
 
-CSFLAGS += -optimize -langversion:experimental
-CSFLAGS += /r:System.dll
+CSFLAGS += -langversion:experimental
+#CSFLAGS += -optimize
+CSFLAGS += -r:System.dll
+CSFLAGS += -r:System.Numerics.dll # required by the hook system
 
 CORE_SRC=$(wildcard ./**.cs)
 
 sharpflare: $(CORE_SRC)
-	mcs -out:$@ $(CSFLAGS) $^
+	mcs $(CSFLAGS) $^ -out:$@
 
 clean:
 	rm sharpflare || true;
