@@ -37,7 +37,35 @@ namespace SharpFlare
 			if(Help || Version)
 				return 0;
 
+			SharpFlare.FileSystem.Setup();
+			
+			Console.WriteLine(FileSystem.LocateFile("/sharpflare"));
+
+			Instancable i = new Instancable();
+			i.Hook();
+			Hooks.Hook.Call("Test", "hello");
+			i.Unhook();
+			Hooks.Hook.Call("Test", "hello");
+			
 			return 0;
+		}
+
+	}
+
+	public class Instancable() : Hooks.Hookable
+	{
+		[Hooks.Hook("Test")]
+		public bool Test(params object[] args)
+		{
+			Console.WriteLine("abc");
+			return false;
+		}
+		
+		[Hooks.Hook("Test")]
+		public bool Test2(params object[] args)
+		{
+			Console.WriteLine("xyz");
+			return false;
 		}
 	}
 }
