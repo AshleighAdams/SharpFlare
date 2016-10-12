@@ -32,7 +32,7 @@ namespace SharpFlare
 			Dictionary<string, string> Headers { get; set; }
 			Stream Content { get; set; } // please set content type
 			void Transmit(); // only call once, subsequent calls ignored
-			NetworkStream DisownSocket(); // take control of the NetworkSocket, used for upgrades
+			NetworkStream DisownSocket(); // take control of the NetworkSocket, used for upgrades, won't be disposed
 		}
 	}
 }
