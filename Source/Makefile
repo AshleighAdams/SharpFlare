@@ -4,6 +4,7 @@ DIRS = Core
 CSC ?= mcs
 CSFLAGS += -langversion:experimental
 #CSFLAGS += -optimize
+CSFLAGS += -debug
 
 default: sharpflare
 
