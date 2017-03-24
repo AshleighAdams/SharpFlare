@@ -73,12 +73,30 @@ namespace SharpFlare
 
 				if(version.StartsWith("HTTP/1"))
 				{
-					string html = "<center>Hello, world.</center>";
+					char[] html =
+@"<html>
+	<head>
+		<title>SharpFlare test!</title>
+	</head>
+	<body>
+		<p>Hello, world!</p>
+	</body>
+</html>".ToCharArray();
+
+
 					await w.WriteLineAsync("HTTP/1.0 200 Okay");
 					await w.WriteLineAsync("Content-Type: text/html");
 					await w.WriteLineAsync("Content-Length: " + html.Length.ToString());
 					await w.WriteLineAsync();
-					await w.WriteLineAsync(html);
+
+					int pos = 0;
+					while(pos < html.Length)
+					{
+						await w.WriteAsync(html, pos, 1);
+						await w.FlushAsync();
+						await Task.Delay(100);
+						pos++;
+					}
 					await w.FlushAsync();
 				}
 				else if(version.StartsWith("HTTP/2"))

@@ -49,7 +49,7 @@ namespace SharpFlare
 
 			while(true)
 			{
-				Task.Delay(100);
+				Task.Delay(100).Wait();
 			}
 
 			return 0;
