@@ -20,34 +20,34 @@ namespace SharpFlare
 				TaskCreationOptions.RunContinuationsAsynchronously,
 
 				TaskScheduler.Default);
-			lock(Tasks)
-			{
-				Tasks.AddLast(x);
-			}
+			//lock(Tasks)
+			//{
+			//	Tasks.AddLast(x);
+			//}
 			return x;
 		}
 
 		public static void WaitAll()
 		{
-			Task t = null;
-			while(true)
-			{
-				lock(Tasks)
-				{
-					if(t != null)
-					{
-						//Assert(Tasks.First == t);
-						Tasks.RemoveFirst();
-						t = null;
-					}
-					if(Tasks.Count == 0)
-						break;
+			//Task t = null;
+			//while(true)
+			//{
+			//	lock(Tasks)
+			//	{
+			//		if(t != null)
+			//		{
+			//			//Assert(Tasks.First == t);
+			//			Tasks.RemoveFirst();
+			//			t = null;
+			//		}
+			//		if(Tasks.Count == 0)
+			//			break;
 
-					t = Tasks.First.Value;
-				}
+			//		t = Tasks.First.Value;
+			//	}
 
-				t.Wait();
-			}
+			//	t.Wait();
+			//}
 		}
 	}
 } 
