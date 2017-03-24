@@ -1,7 +1,7 @@
 
 using System;
 using SharpFlare.Logger;
-
+using System.Threading.Tasks;
 
 namespace SharpFlare
 {
@@ -45,6 +45,13 @@ namespace SharpFlare
 			i.Unhook();
 			Hooks.Hook.Call("Test", "hello");
 			
+			Task listener = HttpListener.Listen(8080);
+
+			while(true)
+			{
+				Task.Delay(100);
+			}
+
 			return 0;
 		}
 

@@ -11,6 +11,14 @@ namespace SharpFlare
 {
 	namespace Hooks
 	{
+		/*
+		static class HookTests : UnitTest
+		{
+			static bool Test()
+			{
+			}
+		}
+		*/
 		[AttributeUsage(AttributeTargets.Method)]
 		public class HookAttribute
 			: System.Attribute
@@ -46,6 +54,14 @@ namespace SharpFlare
 					table[name] = hookinfos = new Dictionary<string, HookInfo>();
 
 				return hookinfos[id] = new HookInfo(name, id, order, func);
+			}
+			
+			public static void Remove(string name, string id)
+			{
+				Dictionary<string, HookInfo> hookinfos;
+				if(!table.TryGetValue(name, out hookinfos))
+					return; // no hook by this name, already removed
+				hookinfos.Remove(id);
 			}
 			
 			public static bool Call(string name, params object[] args)
@@ -129,9 +145,13 @@ namespace SharpFlare
 				foreach(var hook in this.Hooks)
 				{
 					GlobalLogger.Message(Level.Verbose, $"remove hook: {hook.Name}, {hook.Id}");
+					SharpFlare.Hooks.Hook.Remove(hook.Name, hook.Id);
 				}
 				
-				Hooks.Clear();
+				this.Hooks.Clear();
+				
+				this.Hooks.Clear();
+				this.Hooks = null;
 				this.Hooked = false;
 			}
 		}
