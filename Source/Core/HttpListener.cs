@@ -12,7 +12,7 @@ namespace SharpFlare
 		public static Task Listen(int port, IPAddress ip = null)
 		{
 			if(ip == null)
-				ip = IPAddress.Any;
+				ip = IPAddress.IPv6Any;
 			var listener = new TcpListener(ip, port);
 			listener.Start();
 
