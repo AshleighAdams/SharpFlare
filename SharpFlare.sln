@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpFlare", "SharpFlare.csproj", "{23FB2736-E102-48DB-AA80-C22A7D4937C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpFlareCore", "SharpFlareCore.csproj", "{8BBC5F9A-EF4F-498A-ABB0-37D240584891}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{23FB2736-E102-48DB-AA80-C22A7D4937C7}.Debug|x86.ActiveCfg = Debug|x86
+		{23FB2736-E102-48DB-AA80-C22A7D4937C7}.Debug|x86.Build.0 = Debug|x86
+		{23FB2736-E102-48DB-AA80-C22A7D4937C7}.Release|x86.ActiveCfg = Release|x86
+		{23FB2736-E102-48DB-AA80-C22A7D4937C7}.Release|x86.Build.0 = Release|x86
+		{8BBC5F9A-EF4F-498A-ABB0-37D240584891}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8BBC5F9A-EF4F-498A-ABB0-37D240584891}.Debug|x86.Build.0 = Debug|Any CPU
+		{8BBC5F9A-EF4F-498A-ABB0-37D240584891}.Release|x86.ActiveCfg = Release|Any CPU
+		{8BBC5F9A-EF4F-498A-ABB0-37D240584891}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

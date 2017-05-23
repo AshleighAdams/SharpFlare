@@ -36,7 +36,7 @@ namespace SharpFlare
 
 			SharpFlare.FileSystem.Setup();
 			
-			Console.WriteLine(FileSystem.LocateFile("/sharpflare"));
+			Console.WriteLine(FileSystem.LocateFile("/sharpflare.exe"));
 
 			Instancable i = new Instancable();
 			i.Hook();
