@@ -106,23 +106,27 @@ namespace SharpFlare
 
 		public async Task<string> ReadLine(int max_length = 1024)
 		{
-			StringBuilder sb = new StringBuilder();
+			byte[] buff = new byte[max_length];
 
-			int at = 0;
-			int lf_count = 0;
+			int frompos = 0;
+			int topos = 0;
+
 			await this.ReadUntil(null, 0, max_length, delegate(byte[] data, int length)
 			{
-				for(; at < length; at++)
+				for(; frompos < length; frompos++)
 				{
-					if(data[at] == (byte)'\n')
-						return at;
-					else if(data[at] != (byte)'\r')
-						sb.Append((char)data[at]);
+					if(data[frompos] == (byte)'\n')
+						return frompos;
+					else if(data[frompos] != (byte)'\r')
+					{
+						buff[topos] = data[frompos];
+						topos++;
+					}
 				}
 				return -1;
 			});
 
-			return sb.ToString();
+			return Encoding.UTF8.GetString(buff, 0, topos);
 		}
 	}
 }
