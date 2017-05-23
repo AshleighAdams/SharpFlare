@@ -57,8 +57,12 @@ namespace SharpFlare
 
 	}
 
-	public class Instancable() : Hooks.Hookable
+	public class Instancable : Hooks.Hookable
 	{
+		public Instancable()
+		{
+		}
+
 		[Hooks.Hook("Test")]
 		public bool Test(params object[] args)
 		{

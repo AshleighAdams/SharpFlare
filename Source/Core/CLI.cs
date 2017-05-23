@@ -11,12 +11,18 @@ namespace SharpFlare
 	namespace CLI
 	{
 		[AttributeUsage(AttributeTargets.Field)]
-		public class OptionAttribute(string description, string longname, char shortname = '\0')
-			: System.Attribute
+		public class OptionAttribute : System.Attribute
 		{
-			public string Description = description;
-			public string Long = longname;
-			public char Short = shortname;
+			public string Description;
+			public string Long;
+			public char Short;
+
+			public OptionAttribute(string description, string longname, char shortname = '\0')
+			{
+				Description = description;
+				Long = longname;
+				Short = shortname;
+			}
 		}
 
 		public static class Options

@@ -21,8 +21,12 @@ namespace SharpFlare
 		}
 
 		// the default sink if a message was promoted all the way up (to console)
-		public class Sink()
+		public class Sink
 		{
+			public Sink()
+			{
+			}
+
 			private static TextWriter StdOut = Console.Out;
 			private static TextWriter StdErr = Console.Error;
 

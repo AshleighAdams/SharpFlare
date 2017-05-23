@@ -34,12 +34,20 @@ namespace SharpFlare
 			public double Order;
 		}
 
-		public class HookInfo(string name, string id, double order, Func<object[], bool> func)
+		public class HookInfo
 		{
-			public string Name = name;
-			public string Id = id;
-			public double Order = order;
-			public Func<object[], bool> Function = func;
+			public string Name;
+			public string Id;
+			public double Order;
+			public Func<object[], bool> Function;
+
+			public HookInfo(string name, string id, double order, Func<object[], bool> func)
+			{
+				Name = name;
+				Id = id;
+				Order = order;
+				Function = func;
+			}
 		}
 
 		public static class Hook
