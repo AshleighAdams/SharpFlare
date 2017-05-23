@@ -23,11 +23,10 @@ namespace SharpFlare
 
 			// load all the stuffs
 			// Assembly.LoadFrom(path);
-
 			// parse arguments
 			if(!CLI.Options.Parse(args))
 				return 1;
-
+			
 			if(Version)
 				GlobalLogger.Message(Level.Normal, "SharpFlare v{0}.{1}", Major, Minor);
 			if(Help)
@@ -45,14 +44,20 @@ namespace SharpFlare
 			i.Unhook();
 			Hooks.Hook.Call("Test", "hello");
 			
-			Task listener = HttpListener.Listen(8080);
+			// int tp, atp;
+			// System.Threading.ThreadPool.GetMinThreads(out tp, out atp);
+			// System.Threading.ThreadPool.SetMinThreads(tp*4, atp*4);
+			// Console.WriteLine(tp);Console.WriteLine(atp);
+
+			HttpListener.Listen(8080);
 
 			while(true)
 			{
-				Task.Delay(100).Wait();
+				//Console.ReadLine();
+				Task.Delay(-1).Wait();
 			}
 
-			return 0;
+			//return 0;
 		}
 
 	}

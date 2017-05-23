@@ -8,23 +8,25 @@ namespace SharpFlare
 {
 	public static class TaskPool
 	{
-		static LinkedList<Task> Tasks = new LinkedList<Task>();
+		//static LinkedList<Task> Tasks = new LinkedList<Task>();
+
 
 		public static Task Run(Action act)
 		{
-			Task x = Task.Factory.StartNew(act,
-				CancellationToken.None,
+			throw new NotImplementedException();
+			//Task x = Task.Factory.StartNew(act,
+			//	CancellationToken.None,
 
-				TaskCreationOptions.LongRunning |
-				TaskCreationOptions.DenyChildAttach |
-				TaskCreationOptions.RunContinuationsAsynchronously,
+			//	TaskCreationOptions.LongRunning |
+			//	TaskCreationOptions.DenyChildAttach |
+			//	TaskCreationOptions.RunContinuationsAsynchronously,
 
-				TaskScheduler.Default);
+			//	TaskScheduler.Default);
 			//lock(Tasks)
 			//{
 			//	Tasks.AddLast(x);
 			//}
-			return x;
+			//return x;
 		}
 
 		public static void WaitAll()

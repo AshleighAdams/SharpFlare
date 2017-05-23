@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Collections.Generic;
@@ -9,38 +10,47 @@ namespace SharpFlare
 {
 	public static class HttpListener
 	{
-		public static Task Listen(int port, IPAddress ip = null)
+		public static void Listen(int port, IPAddress ip = null)
 		{
 			if(ip == null)
 				ip = IPAddress.IPv6Any;
 			var listener = new TcpListener(ip, port);
-			listener.Start();
+			listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
 
-			return TaskPool.Run(() => _ListenTask(listener));
-			//return Task.Factory.StartNew(
-			//	async delegate()
-			//	{
-			//		await _ListenTask(listener);
-			//	}, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach | TaskCreationOptions.RunContinuationsAsynchronously);
+			listener.Start(100);
+
+			Thread t = new Thread(new ParameterizedThreadStart(_ListenTask));
+			t.Start(listener);
+			//Task.Run(() => _ListenTaskAsync(listener));
 		}
 
-		private static async void _ListenTask(TcpListener l)
+		private static void _ListenTask(object lo)
+		{
+			TcpListener listener = (TcpListener)lo; // do i have to make this copy like in Lua? i forget if C# needs this...
+			while(true)
+			{
+				//Console.WriteLine("Accept");
+				Socket sock = listener.AcceptSocket();
+
+				if(sock == null)
+					break;
+
+				Task.Run(() => _HandleSocketTask(sock));
+			}
+		}
+
+		private static async Task _ListenTaskAsync(TcpListener l)
 		{
 			TcpListener listener = l; // do i have to make this copy like in Lua? i forget if C# needs this...
 			while(true)
 			{
-				Console.WriteLine("Accept");
+				//Console.WriteLine("Accept");
 				Socket sock = await listener.AcceptSocketAsync();
 
 				if(sock == null)
 					break;
 
-				TaskPool.Run(() => _HandleSocketTask(sock));
-				//Task.Factory.StartNew(
-				//	async delegate()
-				//	{
-				//		await _HandleSocketTask(sock);
-				//	}, TaskCreationOptions.LongRunning | TaskCreationOptions.DenyChildAttach | TaskCreationOptions.RunContinuationsAsynchronously);
+				Task.Run(() => _HandleSocketTask(sock));
 			}
 		}
 
@@ -48,71 +58,17 @@ namespace SharpFlare
 
 		private static async void _HandleSocketTask(Socket socket)
 		{
-			// identify method, resource, and version
-			NetworkStream    ns = new NetworkStream(socket, true);
-			//BufferedStream   bs = new BufferedStream(ns);
-			MemoryStream     ms = new MemoryStream();
-			StreamWriter     w  = new StreamWriter(ns); // will dispose the stream
-			SafeStreamReader r  = new SafeStreamReader(ns);
+			SocketStream str = new SocketStream(socket);
+			byte[] buff = new byte[4096];
 
-			while(true)
+			while(str.Connected)
 			{
-				string[] payload = (await r.SafeReadLine()).Split(_SplitString, 3);
-				if(payload.Length < 3)
+				// read headers
+				while(true)
 				{
-					// invalid request
-					socket.Close();
-					break;
-				}
-
-				string method   = payload[0];
-				string resource = payload[1];
-				string version  = payload[2];
-
-				Console.WriteLine($"{method} {resource} {version}");
-
-				if(version.StartsWith("HTTP/1"))
-				{
-					char[] html =
-@"<html>
-	<head>
-		<title>SharpFlare test!</title>
-	</head>
-	<body>
-		<p>Hello, world!</p>
-	</body>
-</html>".ToCharArray();
-
-
-					await w.WriteLineAsync("HTTP/1.0 200 Okay");
-					await w.WriteLineAsync("Content-Type: text/html");
-					await w.WriteLineAsync("Content-Length: " + html.Length.ToString());
-					await w.WriteLineAsync();
-
-					int pos = 0;
-					while(pos < html.Length)
-					{
-						await w.WriteAsync(html, pos, 1);
-						await w.FlushAsync();
-						await Task.Delay(100);
-						pos++;
-					}
-					await w.FlushAsync();
-				}
-				else if(version.StartsWith("HTTP/2"))
-				{
-					socket.Close();
-					break;
-				}
-				else
-				{
-					// not supported
-					socket.Close();
-					break;
+					Console.WriteLine(await str.ReadLine());
 				}
 			}
-			// "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
-			// 0x505249202a20485454502f322e300d0a0d0a534d0d0a0d0a
 		}
 	}
 } 
