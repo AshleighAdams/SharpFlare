@@ -4,3 +4,4 @@ build/
 # VS
 bin/
 obj/
+*.userprefs
