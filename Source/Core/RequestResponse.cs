@@ -9,30 +9,32 @@ namespace SharpFlare
 {
 	namespace Http
 	{
-		public enum ResponseCode : uint
+		public class HttpException : Exception
 		{
-			Okay = 200,
-			FileNotFound = 404
+			public readonly int HttpCode;
+			public HttpException(string message, int code = 401) : base(message)
+			{
+				HttpCode = code;
+			}
 		}
-		
+
 		public interface Request
 		{
 			string Protocol { get; }
 			string Method { get; }
+			string Host { get; }
 			string Path { get; }
 			string Authority { get; }
 			string Scheme { get; }
-			Dictionary<string, string> Headers { get; }
-			Stream Content { get; }
+			string this[string index] { get; }
+			SocketStream Content { get; }
 		}
 		
 		public interface Response
 		{
-			ResponseCode Response { get; set; }
-			Dictionary<string, string> Headers { get; set; }
+			Status StatusCode { get; set; }
+			string this[string index] { get; set; }
 			Stream Content { get; set; } // please set content type
-			void Transmit(); // only call once, subsequent calls ignored
-			NetworkStream DisownSocket(); // take control of the NetworkSocket, used for upgrades, won't be disposed
 		}
 	}
 }
