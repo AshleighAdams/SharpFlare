@@ -33,6 +33,8 @@ namespace SharpFlare
 			PeekCompact(false);
 			// will fill the buffers with any data availible, and hang if there is no new data
 			int read = await stream.ReadAsync(PeekBuffer, PeekLength, max_length - PeekLength);
+			if(read <= 0)
+				throw new SocketException();
 			PeekLength += read;
 			return read;
 		}
@@ -72,7 +74,12 @@ namespace SharpFlare
 			}
 
 			if(block || sock.Available > 0)
-				read += await stream.ReadAsync(buffer, pos, length);
+			{
+				int newread = await stream.ReadAsync(buffer, pos, length);
+				if(block && newread <= 0)
+					throw new SocketException();
+				read += newread;
+			}
 			return read;
 		}
 
