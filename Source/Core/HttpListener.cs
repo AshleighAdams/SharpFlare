@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Collections.Generic;
+using System.Text;
 
 namespace SharpFlare
 {
@@ -54,20 +55,67 @@ namespace SharpFlare
 			}
 		}
 
-		static char[] _SplitString = new char[1]{' '};
+		public static async Task<int> ReadHttpHeaders(this SocketStream self, byte[] buff, int pos, int length)
+		{
+			int at = 0;
+			int lf_count = 0;
+
+			return await self.ReadUntil(buff, pos, length, delegate(byte[] peekbuff, int offset, int peeklength)
+			{
+				for(; at < peeklength; at++)
+				{
+					if(peekbuff[offset + at] == '\n')
+					{
+						lf_count++;
+						if(lf_count == 2)
+							return at;
+					}
+					else if(peekbuff[offset + at] != '\r')
+						lf_count = 0;
+				}
+				return -1;
+			});
+		}
 
 		private static async void _HandleSocketTask(Socket socket)
 		{
 			SocketStream str = new SocketStream(socket);
 			byte[] buff = new byte[4096];
 
-			while(str.Connected)
+
+			string html = 
+@"<html>
+	<head>
+		<title>SharpFlare test!</title>
+	</head>
+	<body>
+		<p>Hello, world!</p>
+	</body>
+</html>";
+			string response =
+@"HTTP/1.1 200 Okay
+Connection: keep-alive
+Content-Type: text/html
+Content-Length: " + html.Length.ToString() + @"
+
+" + html;
+
+			try
 			{
-				// read headers
-				while(true)
+				while(str.Connected)
 				{
-					Console.WriteLine(await str.ReadLine());
+					int len = await str.ReadHttpHeaders(buff, 0, buff.Length);
+					string[] lines = Encoding.UTF8.GetString(buff, 0, len).Split('\n');
+
+					Console.WriteLine(lines[0]);
+
+					await str.Write(response);
+
+					Console.WriteLine("wrote {0} bytes", response.Length);
 				}
+			}
+			catch(SocketException s)
+			{
 			}
 		}
 	}
