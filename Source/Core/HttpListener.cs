@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
+using SharpFlare.Http;
 
 namespace SharpFlare
 {
@@ -79,7 +80,6 @@ namespace SharpFlare
 
 		private static async void _HandleSocketTask(Socket socket)
 		{
-			SocketStream str = new SocketStream(socket);
 			byte[] buff = new byte[4096];
 
 
@@ -91,7 +91,8 @@ namespace SharpFlare
 	<body>
 		<p>Hello, world!</p>
 	</body>
-</html>";
+</html>
+";
 			string response =
 @"HTTP/1.1 200 Okay
 Connection: keep-alive
@@ -100,22 +101,35 @@ Content-Length: " + html.Length.ToString() + @"
 
 " + html;
 
-			try
+			Http1Request req = new Http1Request();
+			using(SocketStream str = new SocketStream(socket))
 			{
-				while(str.Connected)
+				try
 				{
-					int len = await str.ReadHttpHeaders(buff, 0, buff.Length);
-					string[] lines = Encoding.UTF8.GetString(buff, 0, len).Split('\n');
+					while(str.Connected)
+					{
+						System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
 
-					Console.WriteLine(lines[0]);
+						sw.Start();
 
-					await str.Write(response);
+						int len = await str.ReadHttpHeaders(buff, 0, buff.Length);
+						string[] lines = Encoding.UTF8.GetString(buff, 0, len).Split('\n');
 
-					Console.WriteLine("wrote {0} bytes", response.Length);
+						//req.Setup(lines);
+
+						await str.Write(response);
+
+						sw.Stop();
+
+
+						Console.WriteLine("{0} {1}", (socket.RemoteEndPoint as IPEndPoint).Address, lines[0]);
+						double microseconds = ((double)sw.ElapsedTicks / (double)(System.Diagnostics.Stopwatch.Frequency)) * 1000000;
+
+						Console.WriteLine("processed in {0}us", microseconds);
+					}
 				}
-			}
-			catch(SocketException s)
-			{
+				catch(SocketException) { }
+				catch(IOException) { }
 			}
 		}
 	}

@@ -28,6 +28,9 @@ namespace SharpFlare
 				this.Scheme    = "todo";
 				this.Host      = this["Host"];
 
+				for(int i = 1; i < lines.Length; i++)
+				{
+				}
 			}
 
 			public string Protocol { get; private set; }
@@ -37,6 +40,8 @@ namespace SharpFlare
 			public string Scheme { get; private set; }
 			public string Host { get; private set; }
 			public SocketStream Content { get; private set; }
+			public long ContentLength { get; private set; }
+
 
 			Dictionary<string, string> headers;
 			public string this[string key]

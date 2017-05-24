@@ -28,6 +28,7 @@ namespace SharpFlare
 			string Scheme { get; }
 			string this[string index] { get; }
 			SocketStream Content { get; }
+			long ContentLength { get; }
 		}
 		
 		public interface Response

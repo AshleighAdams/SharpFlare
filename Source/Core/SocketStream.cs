@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace SharpFlare
 {
-	public class SocketStream // buffers the reader
+	public class SocketStream : IDisposable
 	{
 		Socket sock;
 		NetworkStream stream;
@@ -18,6 +18,33 @@ namespace SharpFlare
 			sock = s;
 			stream = new NetworkStream(sock, true);
 		}
+		~SocketStream()
+		{
+			Dispose(false);
+		}
+
+		private bool disposed = false;
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
+		protected virtual void Dispose(bool disposing)
+		{
+			if (!disposed)
+			{
+				disposed = true;
+
+				if (disposing)
+				{
+					// free managed
+					stream.Dispose();
+				}
+				// free unmanaged
+				PeekBuffer = null;
+			}
+		}
+
 
 		public bool Connected { get { return sock.Connected; } }
 		public bool DataAvailable { get { return stream.DataAvailable; } }
