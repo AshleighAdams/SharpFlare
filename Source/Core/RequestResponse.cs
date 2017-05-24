@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.IO;
+using System.Net;
 
 namespace SharpFlare
 {
@@ -29,6 +30,7 @@ namespace SharpFlare
 			string this[string index] { get; }
 			SocketStream Content { get; }
 			long ContentLength { get; }
+			IPAddress IP { get; }
 		}
 		
 		public interface Response

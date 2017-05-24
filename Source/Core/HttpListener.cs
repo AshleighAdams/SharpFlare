@@ -108,24 +108,13 @@ Content-Length: " + html.Length.ToString() + @"
 				{
 					while(str.Connected)
 					{
-						System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-
-						sw.Start();
-
 						int len = await str.ReadHttpHeaders(buff, 0, buff.Length);
 						string[] lines = Encoding.UTF8.GetString(buff, 0, len).Split('\n');
 
-						//req.Setup(lines);
+						req.Setup(lines, str, socket);
 
 						await str.Write(response);
-
-						sw.Stop();
-
-
-						Console.WriteLine("{0} {1}", (socket.RemoteEndPoint as IPEndPoint).Address, lines[0]);
-						double microseconds = ((double)sw.ElapsedTicks / (double)(System.Diagnostics.Stopwatch.Frequency)) * 1000000;
-
-						Console.WriteLine("processed in {0}us", microseconds);
+						Console.WriteLine("{0} {1} {2}", (socket.RemoteEndPoint as IPEndPoint).Address, req.Method, req.Path);
 					}
 				}
 				catch(SocketException) { }
