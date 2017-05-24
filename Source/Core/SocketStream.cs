@@ -76,11 +76,16 @@ namespace SharpFlare
 			return read;
 		}
 
-		public async Task<int> ReadUntil(byte[] buffer, int pos, int max_length, Func<byte[], int, int> Tester)
+		public async Task<int> ReadUntil(byte[] buffer, int pos, int max_length, Func<byte[], int, int, int> Tester)
 		{
-			PeekCompact(move: true);
-			Debug.Assert(PeekPos == 0);
-			Debug.Assert(max_length <= PeekBufferSize);
+			if(max_length > PeekBufferSize)
+				throw new ArgumentOutOfRangeException("ReadUntil(): max_length is longer than peek buffer size");
+			else if(PeekPos + max_length > PeekBufferSize)
+			{
+				PeekCompact(move: true);
+				Debug.Assert(PeekPos == 0);
+				Debug.Assert(max_length <= PeekBufferSize);
+			}
 
 			// we don't have any lined up, fetch some more
 			if(PeekLength == PeekPos)
@@ -88,11 +93,11 @@ namespace SharpFlare
 
 			while(true)
 			{
-				int index = Tester(PeekBuffer, PeekLength);
+				int index = Tester(PeekBuffer, PeekPos, PeekLength);
 				if(index >= 0)
 				{
 					index++; // 0th place = 1 length
-					PeekPos = index;
+					PeekPos += index;
 
 					if(buffer != null)
 						Buffer.BlockCopy(PeekBuffer, 0, buffer, pos, index);
@@ -111,15 +116,15 @@ namespace SharpFlare
 			int frompos = 0;
 			int topos = 0;
 
-			await this.ReadUntil(null, 0, max_length, delegate(byte[] data, int length)
+			await this.ReadUntil(null, 0, max_length, delegate(byte[] data, int offset, int length)
 			{
 				for(; frompos < length; frompos++)
 				{
-					if(data[frompos] == (byte)'\n')
+					if(data[offset + frompos] == (byte)'\n')
 						return frompos;
-					else if(data[frompos] != (byte)'\r')
+					else if(data[offset + frompos] != (byte)'\r')
 					{
-						buff[topos] = data[frompos];
+						buff[topos] = data[offset + frompos];
 						topos++;
 					}
 				}
@@ -127,6 +132,17 @@ namespace SharpFlare
 			});
 
 			return Encoding.UTF8.GetString(buff, 0, topos);
+		}
+
+		public async Task Write(byte[] buffer, int pos, int length)
+		{
+			await stream.WriteAsync(buffer, pos, length);
+		}
+
+		public async Task Write(string value)
+		{
+			byte[] bytes = Encoding.UTF8.GetBytes(value);
+			await this.Write(bytes, 0, bytes.Length);
 		}
 	}
 }
