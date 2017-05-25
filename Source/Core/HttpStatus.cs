@@ -1,4 +1,6 @@
-﻿
+﻿using System.Collections.Generic;
+
+
 namespace SharpFlare
 {
 	namespace Http
@@ -8,10 +10,23 @@ namespace SharpFlare
 			public readonly int code;
 			public readonly string message;
 
+			static Dictionary<int, Status> Statuses = new Dictionary<int, Status>();
+
 			public Status(int c, string m)
 			{
 				code = c;
 				message = m;
+				Statuses[c] = this;
+			}
+
+			public static implicit operator Status(int code)
+			{
+				Status ret;
+				if(Statuses.TryGetValue(code, out ret))
+					return ret;
+
+				Logger.GlobalLogger.Message(SharpFlare.Logger.Level.Warning, $"Unknown HTTP status code {code} used");
+				return new Status(code, "");
 			}
 
 			public static Status

@@ -52,7 +52,9 @@ namespace SharpFlare
 				if(sock == null)
 					break;
 
+				#pragma warning disable 4014
 				Task.Run(() => _HandleSocketTask(sock));
+				#pragma warning restore 4014
 			}
 		}
 
@@ -80,41 +82,59 @@ namespace SharpFlare
 
 		private static async void _HandleSocketTask(Socket socket)
 		{
-			byte[] buff = new byte[4096];
+			Http1Request  req = new Http1Request();
+			Http1Response res = new Http1Response();
 
-
-			string html = 
-@"<html>
-	<head>
-		<title>SharpFlare test!</title>
-	</head>
-	<body>
-		<p>Hello, world!</p>
-	</body>
-</html>
-";
-			string response =
-@"HTTP/1.1 200 Okay
-Connection: keep-alive
-Content-Type: text/html
-Content-Length: " + html.Length.ToString() + @"
-
-" + html;
-
-			Http1Request req = new Http1Request();
 			using(SocketStream str = new SocketStream(socket))
 			{
 				try
 				{
+					byte[] buff = new byte[4096];
 					while(str.Connected)
 					{
 						int len = await str.ReadHttpHeaders(buff, 0, buff.Length);
 						string[] lines = Encoding.UTF8.GetString(buff, 0, len).Split('\n');
 
-						req.Setup(lines, str, socket);
+						try
+						{
+							req.Setup(lines, str, socket);
+							res.Setup(str, req);
 
-						await str.Write(response);
-						Console.WriteLine("{0} {1} {2}", (socket.RemoteEndPoint as IPEndPoint).Address, req.Method, req.Path);
+							if(req.Path.EndsWith("jpg"))
+							{
+								res["Content-Type"] = "image/jpeg";
+								res.Content = new FileStream("/home/kobra/Pictures/Wallpapers/tree-road-mountain.jpg", FileMode.Open);
+							}
+							else
+							{
+								string html = 
+									"<html>\n" +
+									"	<head>\n" +
+									"	</head>\n" +
+									"	<body>\n" +
+									"		Hello, world!\n" +
+									"	</body>\n" +
+									"</html>\n";
+								
+								res["Content-Type"] = "text/html";
+								res.Content = new MemoryStream(Encoding.UTF8.GetBytes(html));
+							}
+
+
+							await res.Finalize();
+						}
+						catch(NotImplementedException)
+						{
+							string msg = "";
+							await str.Write($"HTTP/1.1 501 Not Implemented\nConnection: keep-alive\nContent-Length: {msg.Length+1}\n\n{msg}\n");
+						}
+						catch(HttpException ex)
+						{
+							Logger.GlobalLogger.Message(Logger.Level.Notice, $"Http Error: {ex.Message}");
+							// TODO: make this use the hook "Error"
+							await str.Write($"HTTP/1.0 {ex.HttpCode.code} {ex.HttpCode.message}\nConnection: close\nContent-Length: {ex.Message.Length+1}\n\n{ex.Message}\n");
+							break; // close the connection
+						}
 					}
 				}
 				catch(SocketException) { }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.IO;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace SharpFlare
 {
@@ -12,9 +13,11 @@ namespace SharpFlare
 	{
 		public class HttpException : Exception
 		{
-			public readonly int HttpCode;
-			public HttpException(string message, int code = 401) : base(message)
+			public readonly Status HttpCode;
+			public HttpException(string message, Status code = null) : base(message)
 			{
+				if(code == null)
+					code = Http.Status.BadRequest;
 				HttpCode = code;
 			}
 		}
@@ -27,17 +30,37 @@ namespace SharpFlare
 			string Path { get; }
 			string Authority { get; }
 			string Scheme { get; }
-			string this[string index] { get; }
 			SocketStream Content { get; }
 			long ContentLength { get; }
 			IPAddress IP { get; }
+			string this[string index] { get; }
+			string GetCookie(string name);
 		}
-		
+
+		namespace CookieAttribute
+		{
+			enum SameSite
+			{
+				None, Lax, Strict
+			}
+		}
+
 		public interface Response
 		{
-			Status StatusCode { get; set; }
-			string this[string index] { get; set; }
-			Stream Content { get; set; } // please set content type
+			Status StatusCode { set; }
+			Task Finalize();
+			Stream Content { set; }
+			// set Content-Type
+			string this[string index] { set; }
+			void SetCookie(                   // Set-Cookie:
+				string name, string value,    // name=value;
+				DateTime?  expires  = null,   // Expires= or Max-Age=;
+				string    domain    = null,   // Domain=;
+				string    path      = null,   // Path=;
+				bool      secure    = false,  // Secure;
+				bool      httponly  = false,  // HttpOnly
+				string    samesite  = null    // SameSite=
+			);
 		}
 	}
 }

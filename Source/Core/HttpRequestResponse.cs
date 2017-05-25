@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Net.Sockets;
 using System.IO;
 using System.Net;
+using System.Threading.Tasks;
+using System.Text;
 
 namespace SharpFlare
 {
@@ -32,17 +34,30 @@ namespace SharpFlare
 					if(string.IsNullOrWhiteSpace(line))
 						break;
 
-					int index = line.IndexOf(':');
-					if(index < 0)
-						throw new NotImplementedException();
 
-					string key = line.Substring(0, index);
-					string value = line.Substring(index + 1).Trim();
+					if(line[0] == ' ' || line[0] == '\t')
+					{
+						if(string.IsNullOrEmpty(lastheader))
+							throw new HttpException("No previous header to append to.", Http.Status.BadRequest);
+						this[lastheader] += ' ' + line.TrimEnd();
+					}
+					else
+					{
+						int index = line.IndexOf(':');
 
-					headers[key] = value;
-					Console.WriteLine($"'{key}' = '{value}'");
+						if(index == 0)
+							throw new HttpException($"The {i}{Util.Nth(i)} header key is empty.", Http.Status.BadRequest);
+						else if(index < 0)
+							throw new HttpException($"The {i}{Util.Nth(i)} header value is non existant.", Http.Status.BadRequest);
 
-					lastheader = key;
+						string key = line.Substring(0, index);
+						string value = line.Substring(index + 1).Trim();
+
+						headers[key] = value;
+						Console.WriteLine($"'{key}' = '{value}'");
+
+						lastheader = key;
+					}
 				}
 
 				this.Method        = split[0];
@@ -78,6 +93,97 @@ namespace SharpFlare
 						return "";
 					return v;
 				}
+				private set
+				{
+					headers[key] = value;
+				}
+			}
+
+			public string GetCookie(string name)
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		public class Http1Response : Response
+		{
+			bool hassent;
+			List<Tuple<string, string>> headers = new List<Tuple<string, string>>();
+			SocketStream stream;
+
+
+			public Stream Content { get; set; }
+
+			public Http1Response() { }
+
+			public void Setup(SocketStream str, Http1Request req)
+			{
+				stream = str;
+				Content = null;
+				headers.Clear();
+				hassent = false;
+				StatusCode = Http.Status.Okay;
+			}
+
+			public Status StatusCode { set; get; }
+
+			byte[] sendbuff = new byte[8192];
+			public async Task Finalize()
+			{
+				if(hassent)
+					return;
+				hassent = true;
+
+				this["Server"] = "SharpFlare";
+				this["Date"] = DateTime.UtcNow.ToString();
+
+				if(Content != null)
+					this["Content-Length"] = Content.Length.ToString();
+
+				StringBuilder sb = new StringBuilder();
+				sb.Append($"HTTP/1.1 {StatusCode.code} {StatusCode.message}\n");
+				foreach(Tuple<string, string> tup in headers) // TODO: escape/encode these
+					sb.Append($"{tup.Item1}: {tup.Item2}\n");
+				sb.Append($"\n");
+
+				string s = sb.ToString();
+				int count = Encoding.UTF8.GetBytes(s, 0, s.Length, sendbuff, 0);
+				await stream.Write(sendbuff, 0, count);
+
+				if(Content != null)
+				{
+					while(true)
+					{
+						count = await Content.ReadAsync(sendbuff, 0, sendbuff.Length);
+						if(count == 0)
+							break;
+						await stream.Write(sendbuff, 0, count);
+					}
+
+					Content.Dispose();
+					Content = null;
+				}
+			}
+
+			// set Content-Type
+			public string this[string index]
+			{
+				set
+				{
+					headers.Add(new Tuple<string, string>(index, value));
+				}
+			}
+
+			public void SetCookie(                   // Set-Cookie:
+				string name, string value,    // name=value;
+				DateTime?  expires  = null,   // Expires= or Max-Age=;
+				string    domain    = null,   // Domain=;
+				string    path      = null,   // Path=;
+				bool      secure    = false,  // Secure;
+				bool      httponly  = false,  // HttpOnly
+				string    samesite  = null    // SameSite=
+			)
+			{
 			}
 		}
 	}
