@@ -3,6 +3,10 @@ using System;
 using SharpFlare.Logger;
 using System.Threading.Tasks;
 
+using SharpFlare.Http;
+using System.Text;
+using System.IO;
+
 namespace SharpFlare
 {
 	static public class Program
@@ -14,7 +18,17 @@ namespace SharpFlare
 		[CLI.Option("Print help information.", "help", 'h')]
 		public static bool Help = false;
 
+		private static bool HandleRequest(params object[] args)
+		{
+			Request req = (Request)args[0];
+			Response res = (Response)args[1];
 
+			res["Content-Type"] = "text/plain";
+			res.Content = new MemoryStream(Encoding.UTF8.GetBytes("Hello, world!"));
+			res.Finalize();
+
+			return false;
+		}
 
 		static public int Main(string[] args)
 		{
@@ -43,11 +57,13 @@ namespace SharpFlare
 			Hooks.Hook.Call("Test", "hello");
 			i.Unhook();
 			Hooks.Hook.Call("Test", "hello");
-			
+
 			// int tp, atp;
 			// System.Threading.ThreadPool.GetMinThreads(out tp, out atp);
 			// System.Threading.ThreadPool.SetMinThreads(tp*4, atp*4);
 			// Console.WriteLine(tp);Console.WriteLine(atp);
+
+			Hooks.Hook.Add("Request", "Main", HandleRequest);
 
 			HttpListener.Listen(8080);
 
