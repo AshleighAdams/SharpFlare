@@ -2,6 +2,7 @@ build/
 .buildconfig
 
 # VS
+.vs/
 bin/
 obj/
 *.userprefs
