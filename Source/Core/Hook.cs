@@ -78,12 +78,10 @@ namespace SharpFlare
 				if(!table.TryGetValue(name, out hookinfos))
 					return false;
 				
-				object[] argsboxed = new object[]{args};
-				
 				foreach(var pair in hookinfos)
 				{
 					HookInfo info = pair.Value;
-					if(info.Function(argsboxed))
+					if(info.Function(args))
 						return true;
 				}
 				return false;
@@ -132,10 +130,10 @@ namespace SharpFlare
 					GlobalLogger.Message(Level.Verbose, $"new hook: {t.Name}.{method.Name}; hook: {attr.Name} id: {id}, order: {attr.Order}");
 					
 					object me = (object)this;
-					Func<object[], bool> curry = //meargs => (bool)method.Invoke(me, meargs);
+					Func<object[], bool> curry =
 						delegate(object[] meargs)
 						{
-							return (bool)method.Invoke(me, meargs);
+							return (bool)method.Invoke(me, new object[] { meargs });
 						};
 						
 					HookInfo hook = SharpFlare.Hooks.Hook.Add(attr.Name, id, curry, attr.Order);
