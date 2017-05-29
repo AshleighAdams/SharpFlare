@@ -100,28 +100,18 @@ namespace SharpFlare
 							req.Setup(lines, str, socket);
 							res.Setup(str, req);
 
-							if(req.Path.EndsWith("jpg"))
+							Hooks.Hook.Call("Request", req, res);
+
+							if (!res.Finalized)
 							{
-								res["Content-Type"] = "image/jpeg";
-								res.Content = new FileStream("/home/kobra/Pictures/Wallpapers/tree-road-mountain.jpg", FileMode.Open);
-							}
-							else
-							{
-								string html = 
-									"<html>\n" +
-									"	<head>\n" +
-									"	</head>\n" +
-									"	<body>\n" +
-									"		Hello, world!\n" +
-									"	</body>\n" +
-									"</html>\n";
-								
-								res["Content-Type"] = "text/html";
-								res.Content = new MemoryStream(Encoding.UTF8.GetBytes(html));
+								res.StatusCode = Http.Status.InternalServerError;
+								res["Content-Type"] = "text/plain";
+								res.Content = new MemoryStream(Encoding.UTF8.GetBytes("Request was not finalized."));
+								await res.Finalize();
 							}
 
-
-							await res.Finalize();
+							if (!req["Connection"].ToLower().Contains("keep-alive"))
+								break;
 						}
 						catch(NotImplementedException)
 						{

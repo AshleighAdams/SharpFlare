@@ -107,7 +107,7 @@ namespace SharpFlare
 
 		public class Http1Response : Response
 		{
-			bool hassent;
+			public bool Finalized { get; private set; }
 			List<Tuple<string, string>> headers = new List<Tuple<string, string>>();
 			SocketStream stream;
 
@@ -121,7 +121,7 @@ namespace SharpFlare
 				stream = str;
 				Content = null;
 				headers.Clear();
-				hassent = false;
+				Finalized = false;
 				StatusCode = Http.Status.Okay;
 			}
 
@@ -130,9 +130,9 @@ namespace SharpFlare
 			byte[] sendbuff = new byte[8192];
 			public async Task Finalize()
 			{
-				if(hassent)
+				if(Finalized)
 					return;
-				hassent = true;
+				Finalized = true;
 
 				this["Server"] = "SharpFlare";
 				this["Date"] = DateTime.UtcNow.ToString();
