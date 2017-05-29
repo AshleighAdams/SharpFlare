@@ -168,9 +168,22 @@ namespace SharpFlare
 			return Encoding.UTF8.GetString(buff, 0, topos);
 		}
 
+		[CLI.Option("Slow sockets to test async operation.", "debug-slow-sockets")]
+		public static bool SlowSockets = false;
+
 		public async Task Write(byte[] buffer, int pos, int length)
 		{
-			await stream.WriteAsync(buffer, pos, length);
+			if (SlowSockets)
+			{
+				for (int i = pos; i < length; i ++)
+				{
+					await stream.WriteAsync(buffer, i, 1);
+					await stream.FlushAsync();
+					await Task.Delay(1);
+				}
+			}
+			else
+				await stream.WriteAsync(buffer, pos, length);
 		}
 
 		public async Task Write(string value)
