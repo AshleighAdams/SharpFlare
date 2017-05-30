@@ -19,12 +19,12 @@ namespace SharpFlare
 				headers.Clear();
 
 				if(lines.Length < 1)
-					throw new HttpException("No data present."); 
+					throw new HttpException("No data present.", keepalive: false); 
 
 				string[] split = lines[0].Split(' ');
 
 				if(split.Length != 3)
-					throw new HttpException("Invalid request line."); 
+					throw new HttpException("Invalid request line.", keepalive: false); 
 				
 
 				string lastheader = ""; // for continuations
@@ -38,7 +38,7 @@ namespace SharpFlare
 					if(line[0] == ' ' || line[0] == '\t')
 					{
 						if(string.IsNullOrEmpty(lastheader))
-							throw new HttpException("No previous header to append to.", Http.Status.BadRequest);
+							throw new HttpException("No previous header to append to.", status: Http.Status.BadRequest, keepalive: false);
 						this[lastheader] += ' ' + line.TrimEnd();
 					}
 					else
@@ -46,9 +46,9 @@ namespace SharpFlare
 						int index = line.IndexOf(':');
 
 						if(index == 0)
-							throw new HttpException($"The {i}{Util.Nth(i)} header key is empty.", Http.Status.BadRequest);
+							throw new HttpException($"The {i}{Util.Nth(i)} header key is empty.", status: Http.Status.BadRequest, keepalive: false);
 						else if(index < 0)
-							throw new HttpException($"The {i}{Util.Nth(i)} header value is non existant.", Http.Status.BadRequest);
+							throw new HttpException($"The {i}{Util.Nth(i)} header value is non existant.", status: Http.Status.BadRequest, keepalive: false);
 
 						string key = line.Substring(0, index);
 						string value = line.Substring(index + 1).Trim();
@@ -110,7 +110,7 @@ namespace SharpFlare
 			public bool Finalized { get; private set; }
 			List<Tuple<string, string>> headers = new List<Tuple<string, string>>();
 			SocketStream stream;
-
+			public bool KeepAlive { get; private set; }
 
 			public Stream Content { get; set; }
 
@@ -123,6 +123,7 @@ namespace SharpFlare
 				headers.Clear();
 				Finalized = false;
 				StatusCode = Http.Status.Okay;
+				KeepAlive = req["Connection"].ToLower().Contains("keep-alive");
 			}
 
 			public Status StatusCode { set; get; }
@@ -133,6 +134,11 @@ namespace SharpFlare
 				if(Finalized)
 					return;
 				Finalized = true;
+
+				if (KeepAlive)
+					this["Connection"] = "keep-alive";
+				else
+					this["Connection"] = "close";
 
 				this["Server"] = "SharpFlare";
 				this["Date"] = DateTime.UtcNow.ToString();

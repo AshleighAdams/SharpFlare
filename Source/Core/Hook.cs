@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Numerics;
 
 using SharpFlare.Logger;
+using System.Threading.Tasks;
 
 namespace SharpFlare
 {
@@ -39,9 +40,9 @@ namespace SharpFlare
 			public string Name;
 			public string Id;
 			public double Order;
-			public Func<object[], bool> Function;
+			public Func<object[], Task<bool>> Function;
 
-			public HookInfo(string name, string id, double order, Func<object[], bool> func)
+			public HookInfo(string name, string id, double order, Func<object[], Task<bool>> func)
 			{
 				Name = name;
 				Id = id;
@@ -55,7 +56,7 @@ namespace SharpFlare
 
 			static Dictionary<string, Dictionary<string, HookInfo>> table = new Dictionary<string, Dictionary<string, HookInfo>>();
 
-			public static HookInfo Add(string name, string id, Func<object[], bool> func, double order = 0)
+			public static HookInfo Add(string name, string id, Func<object[], Task<bool>> func, double order = 0)
 			{
 				Dictionary<string, HookInfo> hookinfos;
 				if(!table.TryGetValue(name, out hookinfos))
@@ -72,7 +73,7 @@ namespace SharpFlare
 				hookinfos.Remove(id);
 			}
 			
-			public static bool Call(string name, params object[] args)
+			public static async Task<bool> Call(string name, params object[] args)
 			{
 				Dictionary<string, HookInfo> hookinfos;
 				if(!table.TryGetValue(name, out hookinfos))
@@ -81,7 +82,7 @@ namespace SharpFlare
 				foreach(var pair in hookinfos)
 				{
 					HookInfo info = pair.Value;
-					if(info.Function(args))
+					if(await info.Function(args))
 						return true;
 				}
 				return false;
@@ -118,7 +119,7 @@ namespace SharpFlare
 					HookAttribute attr = (HookAttribute)method.GetCustomAttributes(typeof(HookAttribute), false)[0];
 					ParameterInfo[] args = method.GetParameters();
 
-					if(method.ReturnType != typeof(Boolean) || args.Length != 1)
+					if(method.ReturnType != typeof(Task<bool>) || args.Length != 1)
 					{
 						GlobalLogger.Message(Level.Critical, "hook has invalid type signature: {0}.{1}", t.Name, method.Name);
 						throw new InvalidHookSignatureException($"hook has invalid type signature: {t.Name}.{method.Name}");
@@ -130,10 +131,11 @@ namespace SharpFlare
 					GlobalLogger.Message(Level.Verbose, $"new hook: {t.Name}.{method.Name}; hook: {attr.Name} id: {id}, order: {attr.Order}");
 					
 					object me = (object)this;
-					Func<object[], bool> curry =
-						delegate(object[] meargs)
+					Func<object[], Task<bool>> curry =
+						async delegate(object[] meargs)
 						{
-							return (bool)method.Invoke(me, new object[] { meargs });
+							Task<bool> res = (Task<bool>)method.Invoke(me, new object[] { meargs });
+							return await res;
 						};
 						
 					HookInfo hook = SharpFlare.Hooks.Hook.Add(attr.Name, id, curry, attr.Order);

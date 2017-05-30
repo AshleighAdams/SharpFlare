@@ -13,12 +13,14 @@ namespace SharpFlare
 	{
 		public class HttpException : Exception
 		{
-			public readonly Status HttpCode;
-			public HttpException(string message, Status code = null) : base(message)
+			public readonly Status HttpStatus;
+			public readonly bool KeepAlive;
+			public HttpException(string message, Status status = null, bool keepalive = true) : base(message)
 			{
-				if(code == null)
-					code = Http.Status.BadRequest;
-				HttpCode = code;
+				if(status == null)
+					status = Http.Status.BadRequest;
+				HttpStatus = status;
+				KeepAlive = keepalive;
 			}
 		}
 

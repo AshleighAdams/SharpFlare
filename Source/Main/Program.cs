@@ -18,27 +18,35 @@ namespace SharpFlare
 		[CLI.Option("Print help information.", "help", 'h')]
 		public static bool Help = false;
 
-		private static bool HandleRequest(params object[] args)
+		static string loremipsum = 
+			"<html>" +
+			"	<head>" +
+			"		<title>Testing</title>" +
+			"	</head>" +
+			"	<body>" +
+			"		Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed tempus euismod commodo. Aenean eu leo sed tellus eleifend iaculis. Vestibulum a tortor condimentum, rhoncus metus non, molestie tellus. Ut sit amet orci rhoncus, consequat nisi nec, finibus nisi. Pellentesque laoreet lacus vel urna auctor mollis. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Cras eget nunc congue, mattis dui ac, egestas tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam blandit nunc vitae ipsum rutrum, a scelerisque enim scelerisque. Pellentesque id sagittis elit, nec eleifend turpis. Nulla ex elit, sollicitudin id turpis id, congue accumsan augue. Vivamus quis nibh ac metus tincidunt pellentesque. Fusce vitae libero et dolor pharetra mollis." +
+			"	</body>" +
+			"</html>";
+
+		private static async Task<bool> HandleRequest(params object[] args)
 		{
 			Request req = (Request)args[0];
 			Response res = (Response)args[1];
 
-			res["Content-Type"] = "text/plain";
-			res.Content = new MemoryStream(Encoding.UTF8.GetBytes("Hello, world!"));
-			res.Finalize();
+			res["Content-Type"] = "text/html";
+			res.Content = new MemoryStream(Encoding.UTF8.GetBytes(loremipsum));
+			await res.Finalize();
 
 			return false;
 		}
 
 		static public int Main(string[] args)
 		{
-			// remove any culture info, everything is invariant; aka en-US.
 			System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-
 			// load all the stuffs
 			// Assembly.LoadFrom(path);
 			// parse arguments
-			if(!CLI.Options.Parse(args))
+			if (!CLI.Options.Parse(args))
 				return 1;
 			
 			if(Version)
@@ -54,9 +62,9 @@ namespace SharpFlare
 
 			Instancable i = new Instancable();
 			i.Hook();
-			Hooks.Hook.Call("Test", "hello");
+			Hooks.Hook.Call("Test", "hello").Wait();
 			i.Unhook();
-			Hooks.Hook.Call("Test", "hello");
+			Hooks.Hook.Call("Test", "hello").Wait();
 
 			// int tp, atp;
 			// System.Threading.ThreadPool.GetMinThreads(out tp, out atp);
@@ -73,9 +81,9 @@ namespace SharpFlare
 				Task.Delay(-1).Wait();
 			}
 
-			//return 0;
+			return 0;
 		}
-
+		
 	}
 
 	public class Instancable : Hooks.Hookable
@@ -85,14 +93,14 @@ namespace SharpFlare
 		}
 
 		[Hooks.Hook("Test")]
-		public bool Test(params object[] args)
+		public async Task<bool> Test(params object[] args)
 		{
 			Console.WriteLine("abc");
 			return false;
 		}
 		
 		[Hooks.Hook("Test")]
-		public bool Test2(params object[] args)
+		public async Task<bool> Test2(params object[] args)
 		{
 			Console.WriteLine("xyz");
 			return false;

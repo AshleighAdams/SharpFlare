@@ -90,8 +90,12 @@ namespace SharpFlare
 				try
 				{
 					byte[] buff = new byte[4096];
-					while(str.Connected)
+					bool first = true;
+
+					while(str.Connected && (res.KeepAlive || first))
 					{
+						if (first) first = false;
+
 						int len = await str.ReadHttpHeaders(buff, 0, buff.Length);
 						string[] lines = Encoding.UTF8.GetString(buff, 0, len).Split('\n');
 
@@ -99,32 +103,32 @@ namespace SharpFlare
 						{
 							req.Setup(lines, str, socket);
 							res.Setup(str, req);
-
-							Hooks.Hook.Call("Request", req, res);
+							
+							await Hooks.Hook.Call("Request", req, res);
 
 							if (!res.Finalized)
-							{
-								res.StatusCode = Http.Status.InternalServerError;
-								res["Content-Type"] = "text/plain";
-								res.Content = new MemoryStream(Encoding.UTF8.GetBytes("Request was not finalized."));
-								await res.Finalize();
-							}
-
-							if (!req["Connection"].ToLower().Contains("keep-alive"))
-								break;
+								throw new HttpException("Request was not finalized.", Http.Status.InternalServerError);
 						}
+						///*
 						catch(NotImplementedException)
 						{
-							string msg = "";
+							if (res.Finalized)
+								break; // a response has already been sent, or it failed during the sending, a 501 internal error
+									   // can't be sent anymore, so just close the connection
+									   //hook.Call
+							string msg = "Not implimented";
 							await str.Write($"HTTP/1.1 501 Not Implemented\nConnection: keep-alive\nContent-Length: {msg.Length+1}\n\n{msg}\n");
 						}
 						catch(HttpException ex)
 						{
 							Logger.GlobalLogger.Message(Logger.Level.Notice, $"Http Error: {ex.Message}");
 							// TODO: make this use the hook "Error"
-							await str.Write($"HTTP/1.0 {ex.HttpCode.code} {ex.HttpCode.message}\nConnection: close\nContent-Length: {ex.Message.Length+1}\n\n{ex.Message}\n");
-							break; // close the connection
+							await str.Write($"HTTP/1.0 {ex.HttpStatus.code} {ex.HttpStatus.message}\nConnection: close\nContent-Length: {ex.Message.Length+1}\n\n{ex.Message}\n");
+
+							if (!ex.KeepAlive)
+								break;
 						}
+						// */
 					}
 				}
 				catch(SocketException) { }
