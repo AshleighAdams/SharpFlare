@@ -141,7 +141,7 @@ namespace SharpFlare
 					this["Connection"] = "close";
 
 				this["Server"] = "SharpFlare";
-				this["Date"] = DateTime.UtcNow.ToString();
+				this["Date"] = DateTime.Now.ToHttpDate();
 
 				if(Content != null)
 					this["Content-Length"] = Content.Length.ToString();

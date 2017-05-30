@@ -14,6 +14,13 @@ namespace SharpFlare
 				return nths[0];
 			return nths[mod100 % 10];
 		}
+
+		public static string ToHttpDate(this DateTime when)
+		{
+			//  Sun, 06 Nov 1994 08:49:37 GMT
+			DateTime utc = when.ToUniversalTime();
+			return utc.ToString("ddd, dd MMM yyyy HH':'mm':'ss 'GMT'");
+		}
 	}
 }
 
