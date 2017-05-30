@@ -12,18 +12,24 @@ namespace SharpFlare
 {
 	public static class HttpListener
 	{
-		public static void Listen(int port, IPAddress ip = null)
+		public static async Task ListenAsync(int port, IPAddress ip)
 		{
-			if(ip == null)
-				ip = IPAddress.IPv6Any;
-			var listener = new TcpListener(ip, port);
-			listener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, 1);
-
+			if (ip == null)
+				throw new ArgumentNullException("ip");
+			TcpListener listener = new TcpListener(ip, port);
 			listener.Start(100);
+			await Task.Run(() => _ListenTaskAsync(listener));
+		}
 
-			Thread t = new Thread(new ParameterizedThreadStart(_ListenTask));
-			t.Start(listener);
-			//Task.Run(() => _ListenTaskAsync(listener));
+		public static Thread Listen(int port, IPAddress ip)
+		{
+			if (ip == null)
+				throw new ArgumentNullException("ip");
+			TcpListener listener = new TcpListener(ip, port);
+			listener.Start(100);
+			Thread ret = new Thread(new ParameterizedThreadStart(_ListenTask));
+			ret.Start();
+			return ret;
 		}
 
 		private static void _ListenTask(object lo)

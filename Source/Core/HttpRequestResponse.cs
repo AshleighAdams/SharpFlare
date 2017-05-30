@@ -60,6 +60,8 @@ namespace SharpFlare
 					}
 				}
 
+				
+
 				this.Method        = split[0];
 				this.Path          = split[1];
 				this.Protocol      = split[2];
@@ -69,7 +71,6 @@ namespace SharpFlare
 				this.Content       = stream;
 				this.IP            = (sock.RemoteEndPoint as IPEndPoint).Address;
 				this.ContentLength = 0;
-				// parse headers
 			}
 
 			public string Protocol { get; private set; }

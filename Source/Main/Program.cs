@@ -7,6 +7,7 @@ using SharpFlare.Http;
 using System.Text;
 using System.IO;
 using static SharpFlare.Router;
+using System.Net;
 
 namespace SharpFlare
 {
@@ -66,15 +67,15 @@ namespace SharpFlare
 			
 			Hooks.Hook.Add("Request", "Main", Router.HandleRequest);
 			Host.Any.Route("/lorem", Lorem);
+
+			Task ipv4 = HttpListener.ListenAsync(8080, IPAddress.Any);
+			Task ipv6 = HttpListener.ListenAsync(8080, IPAddress.IPv6Any);
+
+			Task.WaitAll(ipv4, ipv6);
+
+			//while (true)
+			//	Task.Delay(-1).Wait();
 			
-			HttpListener.Listen(8080);
-
-			while(true)
-			{
-				//Console.ReadLine();
-				Task.Delay(-1).Wait();
-			}
-
 			return 0;
 		}
 		
