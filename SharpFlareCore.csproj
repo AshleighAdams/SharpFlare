@@ -19,6 +19,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <LangVersion>6</LangVersion>
+    <WarningsAsErrors>CS4014</WarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -28,6 +29,7 @@
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
     <LangVersion>6</LangVersion>
+    <WarningsAsErrors>CS4014</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -43,6 +45,7 @@
     <Compile Include="Source\Core\Logger.cs" />
     <Compile Include="Source\Core\Plugins.cs" />
     <Compile Include="Source\Core\RequestResponse.cs" />
+    <Compile Include="Source\Core\Router.cs" />
     <Compile Include="Source\Core\TaskPool.cs" />
     <Compile Include="Source\Core\VirtualFileSystem.cs" />
     <Compile Include="Source\Core\SocketStream.cs" />

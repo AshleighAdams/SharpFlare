@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using SharpFlare.Http;
 using System.Text;
 using System.IO;
+using static SharpFlare.Router;
 
 namespace SharpFlare
 {
@@ -18,26 +19,31 @@ namespace SharpFlare
 		[CLI.Option("Print help information.", "help", 'h')]
 		public static bool Help = false;
 
-		static string loremipsum = 
-			"<html>" +
-			"	<head>" +
-			"		<title>Testing</title>" +
-			"	</head>" +
-			"	<body>" +
-			"		Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed tempus euismod commodo. Aenean eu leo sed tellus eleifend iaculis. Vestibulum a tortor condimentum, rhoncus metus non, molestie tellus. Ut sit amet orci rhoncus, consequat nisi nec, finibus nisi. Pellentesque laoreet lacus vel urna auctor mollis. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Cras eget nunc congue, mattis dui ac, egestas tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam blandit nunc vitae ipsum rutrum, a scelerisque enim scelerisque. Pellentesque id sagittis elit, nec eleifend turpis. Nulla ex elit, sollicitudin id turpis id, congue accumsan augue. Vivamus quis nibh ac metus tincidunt pellentesque. Fusce vitae libero et dolor pharetra mollis." +
-			"	</body>" +
-			"</html>";
-
-		private static async Task<bool> HandleRequest(params object[] args)
+		static int Test()
 		{
-			Request req = (Request)args[0];
-			Response res = (Response)args[1];
+			Console.WriteLine(FileSystem.LocateFile("/sharpflare.exe"));
+			Instancable i = new Instancable();
+			i.Hook();
+			Hooks.Hook.Call("Test", "hello").Wait();
+			i.Unhook();
+			Hooks.Hook.Call("Test", "hello").Wait();
+			return 0;
+		}
 
+		static string loremipsum =
+			"<html>\n" +
+			"	<head>\n" +
+			"		<title>Testing</title>\n" +
+			"	</head>\n" +
+			"	<body>\n" +
+			"		Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed tempus euismod commodo. Aenean eu leo sed tellus eleifend iaculis. Vestibulum a tortor condimentum, rhoncus metus non, molestie tellus. Ut sit amet orci rhoncus, consequat nisi nec, finibus nisi. Pellentesque laoreet lacus vel urna auctor mollis. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Cras eget nunc congue, mattis dui ac, egestas tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam blandit nunc vitae ipsum rutrum, a scelerisque enim scelerisque. Pellentesque id sagittis elit, nec eleifend turpis. Nulla ex elit, sollicitudin id turpis id, congue accumsan augue. Vivamus quis nibh ac metus tincidunt pellentesque. Fusce vitae libero et dolor pharetra mollis.\n" +
+			"	</body>\n" +
+			"</html>\n";
+		public static async Task Lorem(Request req, Response res, string[] args)
+		{
 			res["Content-Type"] = "text/html";
 			res.Content = new MemoryStream(Encoding.UTF8.GetBytes(loremipsum));
 			await res.Finalize();
-
-			return false;
 		}
 
 		static public int Main(string[] args)
@@ -58,21 +64,9 @@ namespace SharpFlare
 
 			SharpFlare.FileSystem.Setup();
 			
-			Console.WriteLine(FileSystem.LocateFile("/sharpflare.exe"));
-
-			Instancable i = new Instancable();
-			i.Hook();
-			Hooks.Hook.Call("Test", "hello").Wait();
-			i.Unhook();
-			Hooks.Hook.Call("Test", "hello").Wait();
-
-			// int tp, atp;
-			// System.Threading.ThreadPool.GetMinThreads(out tp, out atp);
-			// System.Threading.ThreadPool.SetMinThreads(tp*4, atp*4);
-			// Console.WriteLine(tp);Console.WriteLine(atp);
-
-			Hooks.Hook.Add("Request", "Main", HandleRequest);
-
+			Hooks.Hook.Add("Request", "Main", Router.HandleRequest);
+			Host.Any.Route("/lorem", Lorem);
+			
 			HttpListener.Listen(8080);
 
 			while(true)
