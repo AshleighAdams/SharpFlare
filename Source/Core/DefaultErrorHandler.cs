@@ -86,6 +86,13 @@ $@"<html>
 				color: white;
 				font-family: ""ProximaNovaCond"",serif;
 				position: relative;
+				min-width: 800px;
+			}}
+			div.wrapper
+			{{
+				width: 800px;
+				margin: auto auto;
+				padding-top: 10vh;
 			}}
 			h1
 			{{
@@ -130,12 +137,6 @@ $@"<html>
 				background-image: url(""/sharpflare/moon.png"");
 				background-size: 100% 100%;
 				z-index:-1;
-			}}
-			div.wrapper
-			{{
-				width: 800px;
-				margin: auto auto;
-				padding-top: 10vh;
 			}}
 			div.flex
 			{{
