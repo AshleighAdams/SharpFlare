@@ -73,6 +73,7 @@ namespace SharpFlare
 $@"<html>
 	<head>
 		<title>{title}</title>
+		<meta name=""viewport"" content=""width=820"">
 		<style>
 			@font-face
 			{{
@@ -84,9 +85,22 @@ $@"<html>
 				margin: 0;
 				background: black; /* what to show after the mountains, should always be black */
 				color: white;
-				font-family: ""ProximaNovaCond"",serif;
+				font-family: ""ProximaNovaCond"", sans-serif;
 				position: relative;
 				min-width: 800px;
+				overflow-wrap: break-word;
+				-webkit-text-size-adjust: none;
+			}}
+			html
+			{{
+				font-size: 100%;
+			}}
+			@media(max-width:60em)
+			{{
+				html
+				{{
+					font-size: 200%;
+				}}
 			}}
 			div.wrapper
 			{{
@@ -96,7 +110,12 @@ $@"<html>
 			}}
 			h1
 			{{
-				font-size: 28pt;
+				font-size: 150%;
+			}}
+			p.code
+			{{
+				font-size: 100%;
+				font-family: monospace;
 			}}
 			div.mountains
 			{{
@@ -174,9 +193,9 @@ $@"<html>
 							<h1>{title}</h1>
 							<p>{msg}</p>
 						</center>
-						<div style=""display: table; margin: 0 auto; font-family: monospace;"">
+						<p class=code style=""display: table; margin: 0 auto;"">
 							{stack}
-						</div>
+						</p>
 					</div>
 					<div class=""mountains flexgrow"">
 						<div class=moon id = moon onload=""rotate_moon();"">
