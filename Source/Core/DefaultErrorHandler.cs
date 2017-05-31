@@ -54,8 +54,14 @@ namespace SharpFlare
 			msg = ex.Message;
 			stack = "";
 
+			int atm_r = 255, atm_g = 100, atm_b = 255;
+			int sky_r = 0,   sky_g = 0,   sky_b = 255;
+
 			if (ex.HttpStatus.code >= 500 && ex.HttpStatus.code <= 599) // only show a stack trace for server errors
 			{
+				atm_r = 255; atm_g = 50; atm_b = 50;
+				sky_r = 0;   sky_g = 0;  sky_b = 0;
+
 				Exception inner = ex;
 				while (inner.InnerException != null)
 					inner = inner.InnerException;
@@ -130,7 +136,7 @@ $@"<html>
 			div.atmosphere
 			{{
 				width: 100%; /* rgba(150,50,0,1) */
-				background: radial-gradient(1000px 800px at bottom, rgba(255,155,255,0.5), rgba(0,0,255,0.10) );
+				background: radial-gradient(1000px 800px at bottom, rgba({atm_r},{atm_g},{atm_b},0.5), rgba({sky_r},{sky_g},{sky_b},0.10) );
 				z-index:-1;
 			}}
 			div.space
