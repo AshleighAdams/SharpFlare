@@ -94,10 +94,12 @@ $@"<html>
 			div.mountains
 			{{
 				width: 100%;
-				height: 375px;
+				min-height: 100px;
+				max-height: 344px;
+				overflow: hidden;
 				background-image: url(""/sharpflare/mountain-silhouette.png"");
 				background-repeat: repeat-x;
-				background-position: center bottom 0px;
+				background-position: center top 0px;
 			}}
 			div.atmosphere
 			{{
@@ -133,7 +135,17 @@ $@"<html>
 			{{
 				width: 800px;
 				margin: auto auto;
-				padding-top: 20vh; /* 5vh */
+				padding-top: 10vh;
+			}}
+			div.flex
+			{{
+				display: flex;
+				flex-direction: column;
+				min-height: 100vh;
+			}}
+			div.flexgrow
+			{{
+				flex-grow: 1;
 			}}
 		</style>
 		<script>
@@ -155,17 +167,17 @@ $@"<html>
 	<body>
 		<div class=space>
 			<div class=atmosphere>
-				<div class=wrapper>
-					<center>
-						<h1>{title}</h1>
-						<p>{msg}</p>
-					</center>
-					<div style=""display: table; margin: 0 auto; font-family: monospace;"">
-						{stack}
+				<div class=flex>
+					<div class=wrapper>
+						<center>
+							<h1>{title}</h1>
+							<p>{msg}</p>
+						</center>
+						<div style=""display: table; margin: 0 auto; font-family: monospace;"">
+							{stack}
+						</div>
 					</div>
-				</div>
-				<div style=""overflow: show; "">
-					 <div class=mountains>
+					<div class=""mountains flexgrow"">
 						<div class=moon id = moon onload=""rotate_moon();"">
 						</div>
 					</div>
