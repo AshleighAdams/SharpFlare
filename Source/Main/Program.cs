@@ -40,8 +40,15 @@ namespace SharpFlare
 			"		Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed tempus euismod commodo. Aenean eu leo sed tellus eleifend iaculis. Vestibulum a tortor condimentum, rhoncus metus non, molestie tellus. Ut sit amet orci rhoncus, consequat nisi nec, finibus nisi. Pellentesque laoreet lacus vel urna auctor mollis. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Cras eget nunc congue, mattis dui ac, egestas tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam blandit nunc vitae ipsum rutrum, a scelerisque enim scelerisque. Pellentesque id sagittis elit, nec eleifend turpis. Nulla ex elit, sollicitudin id turpis id, congue accumsan augue. Vivamus quis nibh ac metus tincidunt pellentesque. Fusce vitae libero et dolor pharetra mollis.\n" +
 			"	</body>\n" +
 			"</html>\n";
+
+		public static string MethodThatIsBroken(string[] args)
+		{
+			return args[10];
+		}
+
 		public static async Task Lorem(Request req, Response res, string[] args)
 		{
+			string x = MethodThatIsBroken(args); // out of bounds
 			res["Content-Type"] = "text/html";
 			res.Content = new MemoryStream(Encoding.UTF8.GetBytes(loremipsum));
 			await res.Finalize();
@@ -67,6 +74,7 @@ namespace SharpFlare
 			
 			Hooks.Hook.Add("Request", "Main", Router.HandleRequest);
 			Host.Any.Route("/lorem", Lorem);
+			DefaultErrorHandler.Setup();
 
 			Task ipv4 = HttpListener.ListenAsync(8080, IPAddress.Any);
 			Task ipv6 = HttpListener.ListenAsync(8080, IPAddress.IPv6Any);

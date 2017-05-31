@@ -43,7 +43,7 @@ namespace SharpFlare
 				if(sock == null)
 					break;
 
-				Task.Run(() => _HandleSocketTask(sock));
+				Task.Run(() => HandleSocket(sock));
 			}
 		}
 
@@ -59,7 +59,7 @@ namespace SharpFlare
 					break;
 
 				#pragma warning disable 4014
-				Task.Run(() => _HandleSocketTask(sock));
+				Task.Run(() => HandleSocket(sock));
 				#pragma warning restore 4014
 			}
 		}
@@ -86,7 +86,7 @@ namespace SharpFlare
 			});
 		}
 
-		private static async void _HandleSocketTask(Socket socket)
+		private static async void HandleSocket(Socket socket)
 		{
 			Http1Request  req = new Http1Request();
 			Http1Response res = new Http1Response();
@@ -109,30 +109,39 @@ namespace SharpFlare
 						{
 							req.Setup(lines, str, socket);
 							res.Setup(str, req);
-							
+
 							await Hooks.Hook.Call("Request", req, res);
 
 							if (!res.Finalized)
 								throw new HttpException("Request was not finalized.", Http.Status.InternalServerError);
 						}
 						///*
-						catch(NotImplementedException)
+						catch (NotImplementedException ex)
 						{
 							if (res.Finalized)
 								break; // a response has already been sent, or it failed during the sending, a 501 internal error
 									   // can't be sent anymore, so just close the connection
 									   //hook.Call
-							string msg = "Not implimented";
-							await str.Write($"HTTP/1.1 501 Not Implemented\nConnection: keep-alive\nContent-Length: {msg.Length+1}\n\n{msg}\n");
+							res.StatusCode = Status.NotImplemented;
+							await Hooks.Hook.Call("Error", req, res, new HttpException(ex, "not imp", Status.NotImplemented));
 						}
-						catch(HttpException ex)
+						catch (HttpException ex)
 						{
 							Logger.GlobalLogger.Message(Logger.Level.Notice, $"Http Error: {ex.Message}");
 							// TODO: make this use the hook "Error"
-							await str.Write($"HTTP/1.0 {ex.HttpStatus.code} {ex.HttpStatus.message}\nConnection: close\nContent-Length: {ex.Message.Length+1}\n\n{ex.Message}\n");
+							//await str.Write($"HTTP/1.0 {ex.HttpStatus.code} {ex.HttpStatus.message}\nConnection: close\nContent-Length: {ex.Message.Length+1}\n\n{ex.Message}\n");
+
+							res.StatusCode = ex.HttpStatus;
+							await Hooks.Hook.Call("Error", req, res, ex);
 
 							if (!ex.KeepAlive)
 								break;
+						}
+						catch (Exception ex)
+						{
+							Logger.GlobalLogger.Message(Logger.Level.Error, $"{req.Method} {req.Path} Exception: {ex}");
+							res.StatusCode = Status.InternalServerError;
+							await Hooks.Hook.Call("Error", req, res, new HttpException(ex, ex.Message, Status.InternalServerError));
 						}
 						// */
 					}

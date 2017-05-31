@@ -40,6 +40,8 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Compile Include="Source\Core\CLI.cs" />
+    <Compile Include="Source\Core\DefaultErrorHandlerFiles.cs" />
+    <Compile Include="Source\Core\DefaultErrorHandler.cs" />
     <Compile Include="Source\Core\Hook.cs" />
     <Compile Include="Source\Core\HttpListener.cs" />
     <Compile Include="Source\Core\Logger.cs" />

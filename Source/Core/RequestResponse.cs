@@ -22,6 +22,13 @@ namespace SharpFlare
 				HttpStatus = status;
 				KeepAlive = keepalive;
 			}
+			public HttpException(Exception inner, string message, Status status = null, bool keepalive = true) : base(message, inner)
+			{
+				if (status == null)
+					status = Http.Status.BadRequest;
+				HttpStatus = status;
+				KeepAlive = keepalive;
+			}
 		}
 
 		public interface Request

@@ -92,7 +92,7 @@ namespace SharpFlare
 				// assume static for now
 				Route ret;
 				if (StaticRoutes.TryGetValue(path, out ret))
-					throw new ArgumentException($"{path} has already been statically routed");
+					throw new ArgumentException($"The route {path} has already been routed.");
 				StaticRoutes[path] = new Route(path, page);
 			}
 		}
@@ -110,6 +110,8 @@ namespace SharpFlare
 				throw new HttpException($"{req.Path} could not be found.", Status.NotFound);
 
 			await route.Generator(req, res, new string[] { req.Path });
+			await res.Finalize();
+
 			return false;
 		}
 	}
