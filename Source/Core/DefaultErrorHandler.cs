@@ -49,20 +49,25 @@ namespace SharpFlare
 			Response res = (Response)args[1];
 			HttpException ex = (HttpException)args[2];
 
-			Exception inner = ex;
-			while (inner.InnerException != null)
-				inner = inner.InnerException;
+			string title, msg, stack;
+			title = $"{ex.HttpStatus.code} {ex.HttpStatus.message}";
+			msg = ex.Message;
+			stack = "";
 
+			if (ex.HttpStatus.code >= 500 && ex.HttpStatus.code <= 599) // only show a stack trace for server errors
+			{
+				Exception inner = ex;
+				while (inner.InnerException != null)
+					inner = inner.InnerException;
 
-			string msg = (inner.GetType().Name + ": " + inner.Message);
-			string stack;
+				msg = (inner.GetType().Name + ": " + inner.Message);
 
-			if (inner.StackTrace != null)
-				stack = Util.CleanAsyncStackTrace(inner.StackTrace).Replace("<", "&lt;").Replace(">", "&gt;").Replace("\n", "<br />");
-			else
-				stack = "<i>Stacktrace not found.</i>";
-
-			string title = $"{ex.HttpStatus.code} {ex.HttpStatus.message}";
+				if (inner.StackTrace != null)
+					stack = Util.CleanAsyncStackTrace(inner.StackTrace).Replace("<", "&lt;").Replace(">", "&gt;").Replace("\n", "<br />");
+				else
+					stack = "<i>Stacktrace not found.</i>";
+			}
+			
 
 			string html =
 $@"<html>
