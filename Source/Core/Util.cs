@@ -32,6 +32,7 @@ namespace SharpFlare
 		[CLI.Option("Show the directory on public stack traces.", "debug-stack-show-directory")]
 		public static bool StackShowDir = false;
 
+		public static string SourceCodeBase = "";
 		public static string CleanAsyncStackTrace(string stacktrace, bool ispublic = true)
 		{
 			string[] lines = stacktrace.Split('\n');
@@ -57,14 +58,9 @@ namespace SharpFlare
 						string linenum = match.Groups["line"].Value;
 
 						// sanatize the file
-						file = file.Replace('\\', '/');
-
-						string findwhat = "/SharpFlare/";
-						int index = file.IndexOf(findwhat, StringComparison.InvariantCultureIgnoreCase);
-						if (index >= 0)
-							file = file.Substring(index + findwhat.Length);
-
+						file = file.Replace('\\', '/').Replace(Util.SourceCodeBase, "SharpFlare");
 						line = $"{file}:{linenum} in async {@namespace}.{method}(...)";
+						sb.AppendLine(line);
 					}
 				}
 				else
@@ -78,18 +74,14 @@ namespace SharpFlare
 						string linenum = match.Groups["line"].Value;
 
 						// sanatize the file
-						file = file.Replace('\\', '/');
-
-						string findwhat = "/SharpFlare/";
-						int index = file.IndexOf(findwhat, StringComparison.InvariantCultureIgnoreCase);
-						if (index >= 0)
-							file = file.Substring(index + findwhat.Length);
+						file = file.Replace('\\', '/').Replace(Util.SourceCodeBase, "SharpFlare");
 
 						line = $"{file}:{linenum} in {method}";
+						sb.AppendLine(line);
 					}
 				}
 
-				sb.AppendLine(line);
+				
 			}
 
 			return sb.ToString();
