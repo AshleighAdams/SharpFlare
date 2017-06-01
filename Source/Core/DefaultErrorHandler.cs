@@ -122,6 +122,7 @@ $@"<html>
 			h1
 			{{
 				font-size: 150%;
+				font-weight: normal;
 			}}
 			p.code
 			{{
