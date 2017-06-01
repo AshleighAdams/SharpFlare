@@ -57,12 +57,12 @@ namespace SharpFlare
 			msg = ex.Message;
 			stack = "";
 
-			int atm_r = 255, atm_g = 100, atm_b = 255;
-			int sky_r = 0,   sky_g = 0,   sky_b = 255;
+			int atm_r = 140, atm_g = 0, atm_b = 255;
+			int sky_r = 0,   sky_g = 0,   sky_b = 50;
 
 			if (ex.HttpStatus.code >= 500 && ex.HttpStatus.code <= 599) // only show a stack trace for server errors
 			{
-				atm_r = 255; atm_g = 50; atm_b = 50;
+				atm_r = 255; atm_g = 0; atm_b = 255;
 				sky_r = 0; sky_g = 0; sky_b = 0;
 			}
 			if(ex.InnerException != null) // this was an unhandled exception that was caught, show the stack trace
@@ -169,7 +169,7 @@ $@"<html>
 				left: calc(50% - 1600px/2);
 				/*top: calc(1600px/8);*/
 				filter: blur(20px);
-				opacity: 0.3;
+				opacity: 0.2;
 				z-index: -99;
 
 				animation: spin 60s infinite linear;
