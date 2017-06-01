@@ -16,6 +16,7 @@ namespace SharpFlare
 			["/sharpflare/Proxima%20Nova-Regular.otf"] = Convert.FromBase64String(ProximaNovaRegular_otf_base64),
 			["/sharpflare/space.png"] = Convert.FromBase64String(space_png_base64),
 			["/sharpflare/moon.png"] = Convert.FromBase64String(moon_png_base64),
+			["/sharpflare/flare.png"] = Convert.FromBase64String(flare_png_base64),
 			["/sharpflare/mountain-silhouette.png"] = Convert.FromBase64String(mountain_silhouette_png_base64)
 		};
 
@@ -24,6 +25,7 @@ namespace SharpFlare
 			["/sharpflare/Proxima%20Nova-Regular.otf"] = "application/font-sfnt",
 			["/sharpflare/space.png"] = "image/png",
 			["/sharpflare/moon.png"] = "image/png",
+			["/sharpflare/flare.png"] = "image/png",
 			["/sharpflare/mountain-silhouette.png"] = "image/png"
 		};
 
@@ -40,6 +42,7 @@ namespace SharpFlare
 			Router.Host.Any.Route("/sharpflare/Proxima%20Nova-Regular.otf", SendErrorFile);
 			Router.Host.Any.Route("/sharpflare/space.png", SendErrorFile);
 			Router.Host.Any.Route("/sharpflare/moon.png", SendErrorFile);
+			Router.Host.Any.Route("/sharpflare/flare.png", SendErrorFile);
 			Router.Host.Any.Route("/sharpflare/mountain-silhouette.png", SendErrorFile);
 		}
 		
@@ -60,8 +63,10 @@ namespace SharpFlare
 			if (ex.HttpStatus.code >= 500 && ex.HttpStatus.code <= 599) // only show a stack trace for server errors
 			{
 				atm_r = 255; atm_g = 50; atm_b = 50;
-				sky_r = 0;   sky_g = 0;  sky_b = 0;
-
+				sky_r = 0; sky_g = 0; sky_b = 0;
+			}
+			if(ex.InnerException != null) // this was an unhandled exception that was caught, show the stack trace
+			{
 				Exception inner = ex;
 				while (inner.InnerException != null)
 					inner = inner.InnerException;
@@ -139,6 +144,36 @@ $@"<html>
 				background: radial-gradient(1000px 800px at bottom, rgba({atm_r},{atm_g},{atm_b},0.5), rgba({sky_r},{sky_g},{sky_b},0.10) );
 				z-index:-1;
 			}}
+			div.flarecont
+			{{
+				max-height: 100vh;
+				height: 800px;
+				width: 100%;
+				position: absolute;
+				bottom: 0;
+				overflow: hidden;
+				pointer-events: none;
+			}}
+			@keyframes flarespin
+			{{
+				from {{ transform: rotate(0deg);   }}
+				to   {{ transform: rotate(360deg); }}
+			}}
+			div.flare
+			{{
+				background: url(/sharpflare/flare.png);
+				background-size: cover;
+				width: 1600px;
+				height: 1600px;
+				position: absolute;
+				left: calc(50% - 1600px/2);
+				/*top: calc(1600px/8);*/
+				filter: blur(20px);
+				opacity: 0.3;
+				z-index: -99;
+
+				animation: flarespin 60s infinite linear;
+			}}
 			div.space
 			{{
 				background-image: url(""/sharpflare/space.png"");
@@ -162,6 +197,8 @@ $@"<html>
 				background-image: url(""/sharpflare/moon.png"");
 				background-size: 100% 100%;
 				z-index:-1;
+
+				opacity: 0;
 			}}
 			div.flex
 			{{
@@ -175,23 +212,36 @@ $@"<html>
 			}}
 		</style>
 		<script>
+			var rotate = 0;
 			function rotate_moon()
 			{{
 				var moon = document.getElementById(""moon"");
-				var rotate = (new Date().getTime() / 50) % 360.0;
-				var str = ""rotate("" + rotate + ""deg)"";
-				moon.style[""-webkit-transform""] = str;
-				moon.style[""-moz-transform""] = str;
-				moon.style[""-ms-transform""] = str;
-				moon.style[""-o-transform""] = str;
-				moon.style[""transform""] = str;
+				var flare = document.getElementById(""flare"");
+				//var rotate = (new Date().getTime() / 50) % 360.0;
+				rotate = (rotate + 0.5) % 360.0;
+				var strmoon = ""rotate("" + rotate + ""deg)"";
+				var strflare = ""rotate("" + rotate + ""deg)"";
+				moon.style[""-webkit-transform""] = strmoon;
+				flare.style[""-webkit-transform""] = strflare;
+				moon.style[""-moz-transform""] = strmoon;
+				flare.style[""-moz-transform""] = strflare;
+				moon.style[""-ms-transform""] = strmoon;
+				flare.style[""-ms-transform""] = strflare;
+				moon.style[""-o-transform""] = strmoon;
+				flare.style[""-o-transform""] = strflare;
+				moon.style[""transform""] = strmoon;
+				flare.style[""transform""] = strflare;
 			}}
-			setInterval(rotate_moon, 1/24*1000);
-			document.addEventListener(""DOMContentLoaded"", rotate_moon, false);
+			//setInterval(rotate_moon, 1/24*1000);
+			//document.addEventListener(""DOMContentLoaded"", rotate_moon, false);
 		</script>
 	</head>
 	<body>
 		<div class=space>
+			<div class=flarecont>
+				<div class=flare id=flare>
+				</div>
+			</div>
 			<div class=atmosphere>
 				<div class=flex>
 					<div class=wrapper>

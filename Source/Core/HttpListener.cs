@@ -141,7 +141,7 @@ namespace SharpFlare
 						{
 							Logger.GlobalLogger.Message(Logger.Level.Error, $"{req.Method} {req.Path} Exception: {ex}");
 							res.StatusCode = Status.InternalServerError;
-							await Hooks.Hook.Call("Error", req, res, new HttpException(ex, ex.Message, Status.InternalServerError));
+							await Hooks.Hook.Call("Error", req, res, new HttpException(ex, ex.Message, res.StatusCode));
 						}
 						// */
 					}
