@@ -154,7 +154,7 @@ $@"<html>
 				overflow: hidden;
 				pointer-events: none;
 			}}
-			@keyframes flarespin
+			@keyframes spin
 			{{
 				from {{ transform: rotate(0deg);   }}
 				to   {{ transform: rotate(360deg); }}
@@ -172,7 +172,7 @@ $@"<html>
 				opacity: 0.3;
 				z-index: -99;
 
-				animation: flarespin 60s infinite linear;
+				animation: spin 60s infinite linear;
 			}}
 			div.space
 			{{
@@ -211,30 +211,6 @@ $@"<html>
 				flex-grow: 1;
 			}}
 		</style>
-		<script>
-			var rotate = 0;
-			function rotate_moon()
-			{{
-				var moon = document.getElementById(""moon"");
-				var flare = document.getElementById(""flare"");
-				//var rotate = (new Date().getTime() / 50) % 360.0;
-				rotate = (rotate + 0.5) % 360.0;
-				var strmoon = ""rotate("" + rotate + ""deg)"";
-				var strflare = ""rotate("" + rotate + ""deg)"";
-				moon.style[""-webkit-transform""] = strmoon;
-				flare.style[""-webkit-transform""] = strflare;
-				moon.style[""-moz-transform""] = strmoon;
-				flare.style[""-moz-transform""] = strflare;
-				moon.style[""-ms-transform""] = strmoon;
-				flare.style[""-ms-transform""] = strflare;
-				moon.style[""-o-transform""] = strmoon;
-				flare.style[""-o-transform""] = strflare;
-				moon.style[""transform""] = strmoon;
-				flare.style[""transform""] = strflare;
-			}}
-			//setInterval(rotate_moon, 1/24*1000);
-			//document.addEventListener(""DOMContentLoaded"", rotate_moon, false);
-		</script>
 	</head>
 	<body>
 		<div class=space>
