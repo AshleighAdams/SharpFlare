@@ -159,6 +159,13 @@ $@"<html>
 				from {{ transform: rotate(0deg);   }}
 				to   {{ transform: rotate(360deg); }}
 			}}
+			@media(min-width:60em)
+			{{
+				div.flare
+				{{
+					animation: spin 60s infinite linear;
+				}}
+			}}
 			div.flare
 			{{
 				background: url(/sharpflare/flare.png);
@@ -171,8 +178,6 @@ $@"<html>
 				filter: blur(20px);
 				opacity: 0.2;
 				z-index: -99;
-
-				animation: spin 60s infinite linear;
 			}}
 			div.space
 			{{
