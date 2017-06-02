@@ -47,14 +47,12 @@ namespace SharpFlare
 		{
 			res["Content-Type"] = "text/html";
 			res.Content = new MemoryStream(Encoding.UTF8.GetBytes(loremipsum));
-			await res.Finalize();
 		}
 
 		public static async Task TestMissingFile(Request req, Response res, string[] args)
 		{
 			res["Content-Type"] = "text/html";
 			res.Content = new FileStream("idontexist.html", FileMode.Open);
-			await res.Finalize();
 		}
 
 		[LoaderOptimization(LoaderOptimization.MultiDomain)]
