@@ -9,6 +9,7 @@ using System.IO;
 using static SharpFlare.Router;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace SharpFlare
 {
@@ -55,6 +56,94 @@ namespace SharpFlare
 			res.Content = new FileStream("idontexist.html", FileMode.Open);
 		}
 
+		#region ASYNCGEN
+		public static string Asyncify(Type type, List<string> importedNamespaces)
+		{
+			StringBuilder writer = new StringBuilder();
+
+			var TaskType = TypeToCSharp(typeof(Task), importedNamespaces);
+
+			foreach (var method in type.GetMethods())
+			{
+
+				if (method.IsStatic & method.IsPublic)
+				{
+					var parameterList = new List<string>();
+					var argList = new List<string>();
+					foreach (var parameter in method.GetParameters())
+					{
+						parameterList.Add(TypeToCSharp(parameter.ParameterType, importedNamespaces) + " " + parameter.Name);
+						argList.Add(parameter.Name);
+
+						if (parameter.IsOut | parameter.IsOptional | parameter.IsRetval)
+						{
+							throw new NotImplementedException();
+						}
+					}
+
+					var parameters = string.Join(", ", parameterList);
+					var args = string.Join(", ", argList);
+					var returnType = TypeToCSharp(method.ReturnType, importedNamespaces);
+					var typeName = TypeToCSharp(type, importedNamespaces);
+
+					if (method.ReturnType == typeof(void))
+					{
+						writer.AppendFormat(
+							"public static {5} {1}Async({2})\n{{ return {5}.Run(() => {{ {4}.{1}({3}); }}); }}\n",
+							returnType, method.Name, parameters, args, typeName, TaskType
+						);
+					}
+					else
+					{
+						writer.AppendFormat(
+							"public static {5}<{0}> {1}Async({2})\n{{ return {5}.Run(() => {{ return {4}.{1}({3}); }}); }}\n",
+							returnType, method.Name, parameters, args, typeName, TaskType
+						);
+					}
+				}
+			}
+
+			return writer.ToString();
+		}
+
+		static string TypeToCSharp(Type type, List<string> importedNamespaces)
+		{
+
+			string ns;
+			if (importedNamespaces.Contains(type.Namespace))
+			{
+				ns = "";
+			}
+			else
+			{
+				ns = type.Namespace + ".";
+			}
+
+			if (!type.IsGenericType)
+			{
+				return ns + type.Name;
+			}
+			else
+			{
+				var genericList = new List<string>();
+				foreach (var gType in type.GenericTypeArguments)
+				{
+					genericList.Add(TypeToCSharp(gType, importedNamespaces));
+				}
+				var name = type.Name;
+				name = name.Substring(0, name.IndexOf("`"));
+				return string.Format("{0}{1}<{2}>", ns, name, string.Join(", ", genericList));
+			}
+		}
+		public static async Task GenerateAsyncMethods(Request req, Response res, string[] args)
+		{
+			var namespaces = new List<string> { "System", "System.Collections.Generic", "System.IO", "System.Threading.Tasks" };
+			string code = Asyncify(typeof(System.IO.File), namespaces);
+			res["Content-Type"] = "text/plain";
+			res.Content = new MemoryStream(Encoding.UTF8.GetBytes(code));
+		}
+		#endregion
+
 		[LoaderOptimization(LoaderOptimization.MultiDomain)]
 		static public int Main(string[] args)
 		{
@@ -84,6 +173,7 @@ namespace SharpFlare
 			Hooks.Add("Request", "Main", Router.HandleRequest);
 			Host.Any.Route("/lorem", Lorem);
 			Host.Any.Route("/testmissing", TestMissingFile);
+			Host.Any.Route("/async", GenerateAsyncMethods);
 			DefaultErrorHandler.Setup();
 
 			Task ipv4 = HttpListener.ListenAsync(8080, IPAddress.Any);
