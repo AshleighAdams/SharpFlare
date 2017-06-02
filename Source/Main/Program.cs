@@ -82,7 +82,6 @@ namespace SharpFlare
 				GlobalLogger.Message(Level.Normal, "Help not impl.");
 			if(Help || Version)
 				return 0;
-			SharpFlare.FileSystem.Setup();
 			
 			Hooks.Add("Request", "Main", Router.HandleRequest);
 			Host.Any.Route("/lorem", Lorem);
@@ -91,7 +90,7 @@ namespace SharpFlare
 
 			Task ipv4 = HttpListener.ListenAsync(8080, IPAddress.Any);
 			Task ipv6 = HttpListener.ListenAsync(8080, IPAddress.IPv6Any);
-
+			
 			Plugin plug = new Plugin("TestPlugin.dll");
 
 			Task.WaitAll(ipv4, ipv6);
@@ -113,14 +112,14 @@ namespace SharpFlare
 		[Hook("Test")]
 		public async Task<bool> Test(params object[] args)
 		{
-			Console.WriteLine("abc");
+			//Console.WriteLine("abc");
 			return false;
 		}
 		
 		[Hook("Test")]
 		public async Task<bool> Test2(params object[] args)
 		{
-			Console.WriteLine("xyz");
+			//Console.WriteLine("xyz");
 			return false;
 		}
 	}

@@ -56,7 +56,6 @@
     <Compile Include="Source\Core\RequestResponse.cs" />
     <Compile Include="Source\Core\Router.cs" />
     <Compile Include="Source\Core\TaskPool.cs" />
-    <Compile Include="Source\Core\VirtualFileSystem.cs" />
     <Compile Include="Source\Core\SocketStream.cs" />
     <Compile Include="Source\Core\HttpRequestResponse.cs" />
     <Compile Include="Source\Core\HttpStatus.cs" />
