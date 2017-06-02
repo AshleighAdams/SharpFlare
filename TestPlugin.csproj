@@ -3,10 +3,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{8BBC5F9A-EF4F-498A-ABB0-37D240584891}</ProjectGuid>
+    <ProjectGuid>{C591CAF1-B8EB-4B42-B746-7814F70E567E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>SharpFlare</RootNamespace>
-    <AssemblyName>SharpFlareCore</AssemblyName>
+    <AssemblyName>TestPlugin</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -32,12 +32,6 @@
     <LangVersion>6</LangVersion>
     <WarningsAsErrors>CS4014</WarningsAsErrors>
   </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
-  </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>SharpFlareKey.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Numerics" />
@@ -46,23 +40,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="Source\Core\CLI.cs" />
-    <Compile Include="Source\Core\DefaultErrorHandlerFiles.cs" />
-    <Compile Include="Source\Core\DefaultErrorHandler.cs" />
-    <Compile Include="Source\Core\Hook.cs" />
-    <Compile Include="Source\Core\HttpListener.cs" />
-    <Compile Include="Source\Core\Logger.cs" />
-    <Compile Include="Source\Core\Plugins.cs" />
-    <Compile Include="Source\Core\RequestResponse.cs" />
-    <Compile Include="Source\Core\Router.cs" />
-    <Compile Include="Source\Core\TaskPool.cs" />
-    <Compile Include="Source\Core\VirtualFileSystem.cs" />
-    <Compile Include="Source\Core\SocketStream.cs" />
-    <Compile Include="Source\Core\HttpRequestResponse.cs" />
-    <Compile Include="Source\Core\HttpStatus.cs" />
-    <Compile Include="Source\Core\Util.cs" />
+    <Compile Include="Source\TestPlugin\TestPlugin.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="SharpFlareKey.snk" />
+    <ProjectReference Include="SharpFlareCore.csproj">
+      <Project>{8BBC5F9A-EF4F-498A-ABB0-37D240584891}</Project>
+      <Name>SharpFlareCore</Name>
+    </ProjectReference>
   </ItemGroup>
 </Project>

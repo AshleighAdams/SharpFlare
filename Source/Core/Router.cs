@@ -11,6 +11,16 @@ using PageGenerator = System.Func<SharpFlare.Http.Request, SharpFlare.Http.Respo
 
 namespace SharpFlare
 {
+	[AttributeUsage(AttributeTargets.Method)]
+	public class RouteAttribute : System.Attribute
+	{
+		public RouteAttribute(string path)
+		{
+			Path = path;
+		}
+		public string Path;
+	}
+
 	public static class Router
 	{
 		/*
@@ -96,8 +106,7 @@ namespace SharpFlare
 				StaticRoutes[path] = new Route(path, page);
 			}
 		}
-		
-		
+
 		public static async Task<bool> HandleRequest(params object[] args)
 		{
 			Request req = (Request)args[0];

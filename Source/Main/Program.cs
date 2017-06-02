@@ -55,6 +55,7 @@ namespace SharpFlare
 			await res.Finalize();
 		}
 
+		[LoaderOptimization(LoaderOptimization.MultiDomain)]
 		static public int Main(string[] args)
 		{
 			System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
@@ -88,6 +89,8 @@ namespace SharpFlare
 
 			Task ipv4 = HttpListener.ListenAsync(8080, IPAddress.Any);
 			Task ipv6 = HttpListener.ListenAsync(8080, IPAddress.IPv6Any);
+
+			Plugin plug = new Plugin("TestPlugin.dll");
 
 			Task.WaitAll(ipv4, ipv6);
 
