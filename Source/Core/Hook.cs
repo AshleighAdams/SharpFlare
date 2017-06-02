@@ -7,6 +7,7 @@ using System.Numerics;
 
 using SharpFlare.Logger;
 using System.Threading.Tasks;
+using System.Linq.Expressions;
 
 namespace SharpFlare
 {
@@ -124,18 +125,33 @@ namespace SharpFlare
 
 				string InstanceId = (++_HookCurrentInstance).ToString();
 				string id = $"{method.Name}@{InstanceId}";
+				
+				HookInfo hook;
+
+				if (!CLI.GlobalOptions.DebugBindDelegate)
+				{
+					var param1 = Expression.Parameter(typeof(object[]), "args");
+					Expression curry_exp = Expression.Call( // Task<bool>this.method(object[] args)
+						Expression.Constant(this, this.GetType()),
+						method,
+						param1
+					);
+					var curry = Expression.Lambda<Func<object[], Task<bool>>>(curry_exp, param1).Compile();
+					hook = SharpFlare.Hooks.Add(attr.Name, id, curry, attr.Order);
+				}
+				else
+				{
+					object me = (object)this;
+					Func<object[], Task<bool>> curry =
+						async delegate(object[] meargs)
+						{
+							Task<bool> res = (Task<bool>)method.Invoke(me, new object[] { meargs });
+							return await res;
+						};
+					hook = SharpFlare.Hooks.Add(attr.Name, id, curry, attr.Order);
+				}
 
 				GlobalLogger.Message(Level.Verbose, $"new hook: {t.Name}.{method.Name}; hook: {attr.Name} id: {id}, order: {attr.Order}");
-				
-				object me = (object)this;
-				Func<object[], Task<bool>> curry =
-					async delegate(object[] meargs)
-					{
-						Task<bool> res = (Task<bool>)method.Invoke(me, new object[] { meargs });
-						return await res;
-					};
-						
-				HookInfo hook = SharpFlare.Hooks.Add(attr.Name, id, curry, attr.Order);
 				Hooks.AddLast(hook);
 			}
 				

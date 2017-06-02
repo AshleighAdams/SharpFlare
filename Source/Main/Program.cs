@@ -23,12 +23,14 @@ namespace SharpFlare
 
 		static int Test()
 		{
-			Console.WriteLine(FileSystem.LocateFile("/sharpflare.exe"));
 			Instancable i = new Instancable();
 			i.Hook();
-			Hooks.Call("Test", "hello").Wait();
+			for (int n = 0; n < 1000000; n++)
+			{
+				Hooks.Call("Test", "hello").Wait();
+				Hooks.Call("Test", "hello").Wait();
+			}
 			i.Unhook();
-			Hooks.Call("Test", "hello").Wait();
 			return 0;
 		}
 

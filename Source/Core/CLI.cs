@@ -10,6 +10,11 @@ namespace SharpFlare
 {
 	namespace CLI
 	{
+		public static class GlobalOptions
+		{
+			[CLI.Option("Use delegates and reflection to bind functions instead of the faster expressions.", "debug-bind-delegate")]
+			public static bool DebugBindDelegate = false;
+		}
 		[AttributeUsage(AttributeTargets.Field)]
 		public class OptionAttribute : System.Attribute
 		{

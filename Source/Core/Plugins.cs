@@ -116,27 +116,28 @@ namespace SharpFlare
 				if (method.ReturnType != typeof(Task) || args.Length != 3)
 					throw new InvalidFunctionSignatureException($"Plugin route has invalid function signature: {t.Name}.{method.Name}");
 
-				var param1 = Expression.Parameter(typeof(Request), "req");
-				var param2 = Expression.Parameter(typeof(Response), "res");
-				var param3 = Expression.Parameter(typeof(string[]), "args");
-
-				Expression bound_exp = Expression.Call( // (Task)RemoteObject.method(Request, Response, string[])
-					Expression.Constant(RemoteObject, t),
-					method,
-					param1, param2, param3
-				);
-				Console.WriteLine(bound_exp.ToString());
-				var bound = Expression.Lambda<Func<Request, Response, string[], Task>>(bound_exp, param1, param2, param3).Compile();
-				
-				Router.Host.Any.Route(attr.Path, bound);
-
-				// above code is equivilent to below
-				/*
-				Router.Host.Any.Route(attr.Path, async delegate (Request a0, Response a1, string[] a2)
+				if (!CLI.GlobalOptions.DebugBindDelegate)
 				{
-					await (Task)mi.Invoke(RemoteObject, new object[] { a0, a1, a2 });
-				});
-				*/
+					var param1 = Expression.Parameter(typeof(Request), "req");
+					var param2 = Expression.Parameter(typeof(Response), "res");
+					var param3 = Expression.Parameter(typeof(string[]), "args");
+
+					Expression bound_exp = Expression.Call( // (Task)RemoteObject.method(Request, Response, string[])
+						Expression.Constant(RemoteObject, t),
+						method,
+						param1, param2, param3
+					);
+					var bound = Expression.Lambda<Func<Request, Response, string[], Task>>(bound_exp, param1, param2, param3).Compile();
+
+					Router.Host.Any.Route(attr.Path, bound);
+				}
+				else
+				{
+					Router.Host.Any.Route(attr.Path, async delegate (Request a0, Response a1, string[] a2)
+					{
+						await (Task)mi.Invoke(RemoteObject, new object[] { a0, a1, a2 });
+					});
+				}
 			}
 			
 			var _x = Sandbox.MonitoringSurvivedMemorySize;// Sandbox.MonitoringTotalAllocatedMemorySize;
