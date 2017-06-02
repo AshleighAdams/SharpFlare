@@ -26,9 +26,9 @@ namespace SharpFlare
 			Console.WriteLine(FileSystem.LocateFile("/sharpflare.exe"));
 			Instancable i = new Instancable();
 			i.Hook();
-			Hooks.Hook.Call("Test", "hello").Wait();
+			Hooks.Call("Test", "hello").Wait();
 			i.Unhook();
-			Hooks.Hook.Call("Test", "hello").Wait();
+			Hooks.Call("Test", "hello").Wait();
 			return 0;
 		}
 
@@ -79,10 +79,9 @@ namespace SharpFlare
 				GlobalLogger.Message(Level.Normal, "Help not impl.");
 			if(Help || Version)
 				return 0;
-
 			SharpFlare.FileSystem.Setup();
 			
-			Hooks.Hook.Add("Request", "Main", Router.HandleRequest);
+			Hooks.Add("Request", "Main", Router.HandleRequest);
 			Host.Any.Route("/lorem", Lorem);
 			Host.Any.Route("/testmissing", TestMissingFile);
 			DefaultErrorHandler.Setup();
@@ -100,20 +99,20 @@ namespace SharpFlare
 		
 	}
 
-	public class Instancable : Hooks.Hookable
+	public class Instancable : Hookable
 	{
 		public Instancable()
 		{
 		}
 
-		[Hooks.Hook("Test")]
+		[Hook("Test")]
 		public async Task<bool> Test(params object[] args)
 		{
 			Console.WriteLine("abc");
 			return false;
 		}
 		
-		[Hooks.Hook("Test")]
+		[Hook("Test")]
 		public async Task<bool> Test2(params object[] args)
 		{
 			Console.WriteLine("xyz");

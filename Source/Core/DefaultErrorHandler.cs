@@ -38,7 +38,7 @@ namespace SharpFlare
 
 		public static void Setup()
 		{
-			Hooks.Hook.Add("Error", "Default Error", HandleError);
+			Hooks.Add("Error", "Default Error", HandleError);
 			Router.Host.Any.Route("/sharpflare/Proxima%20Nova-Regular.otf", SendErrorFile);
 			Router.Host.Any.Route("/sharpflare/space.png", SendErrorFile);
 			Router.Host.Any.Route("/sharpflare/moon.png", SendErrorFile);

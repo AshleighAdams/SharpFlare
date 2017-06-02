@@ -110,7 +110,7 @@ namespace SharpFlare
 							req.Setup(lines, str, socket);
 							res.Setup(str, req);
 
-							await Hooks.Hook.Call("Request", req, res);
+							await Hooks.Call("Request", req, res);
 
 							if (!res.Finalized)
 								throw new HttpException("Request was not finalized.", Http.Status.InternalServerError);
@@ -123,7 +123,7 @@ namespace SharpFlare
 									   // can't be sent anymore, so just close the connection
 									   //hook.Call
 							res.StatusCode = Status.NotImplemented;
-							await Hooks.Hook.Call("Error", req, res, new HttpException(ex, "not imp", Status.NotImplemented));
+							await Hooks.Call("Error", req, res, new HttpException(ex, "not imp", Status.NotImplemented));
 						}
 						catch (HttpException ex)
 						{
@@ -132,7 +132,7 @@ namespace SharpFlare
 							//await str.Write($"HTTP/1.0 {ex.HttpStatus.code} {ex.HttpStatus.message}\nConnection: close\nContent-Length: {ex.Message.Length+1}\n\n{ex.Message}\n");
 
 							res.StatusCode = ex.HttpStatus;
-							await Hooks.Hook.Call("Error", req, res, ex);
+							await Hooks.Call("Error", req, res, ex);
 
 							if (!ex.KeepAlive)
 								break;
@@ -141,7 +141,7 @@ namespace SharpFlare
 						{
 							Logger.GlobalLogger.Message(Logger.Level.Error, $"{req.Method} {req.Path} Exception: {ex}");
 							res.StatusCode = Status.InternalServerError;
-							await Hooks.Hook.Call("Error", req, res, new HttpException(ex, ex.Message, res.StatusCode));
+							await Hooks.Call("Error", req, res, new HttpException(ex, ex.Message, res.StatusCode));
 						}
 						// */
 					}
