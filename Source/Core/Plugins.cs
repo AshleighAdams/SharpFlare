@@ -52,7 +52,6 @@ namespace SharpFlare
 		}
 	}
 
-	[Serializable]
 	public class Plugin
 	{
 		string FullPath;
