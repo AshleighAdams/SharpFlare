@@ -33,7 +33,6 @@ namespace SharpFlare
 		{
 			r["Content-Type"] = ContentType[req.Path];
 			r.Content = new MemoryStream(Files[req.Path]);
-			await r.Finalize();
 		}
 
 		public static void Setup()
