@@ -13,7 +13,7 @@ namespace SharpFlare
 		static Dictionary<string, byte[]> Files = new Dictionary<string, byte[]>
 		{
 			// todo: when escaping path, %20 -> space
-			["/sharpflare/Proxima%20Nova-Regular.otf"] = Convert.FromBase64String(ProximaNovaRegular_otf_base64),
+			["/sharpflare/Proxima Nova-Regular.otf"] = Convert.FromBase64String(ProximaNovaRegular_otf_base64),
 			["/sharpflare/space.png"] = Convert.FromBase64String(space_png_base64),
 			["/sharpflare/moon.png"] = Convert.FromBase64String(moon_png_base64),
 			["/sharpflare/flare.png"] = Convert.FromBase64String(flare_png_base64),
@@ -22,7 +22,7 @@ namespace SharpFlare
 
 		static Dictionary<string, string> ContentType = new Dictionary<string, string>
 		{
-			["/sharpflare/Proxima%20Nova-Regular.otf"] = "application/font-sfnt",
+			["/sharpflare/Proxima Nova-Regular.otf"] = "application/font-sfnt",
 			["/sharpflare/space.png"] = "image/png",
 			["/sharpflare/moon.png"] = "image/png",
 			["/sharpflare/flare.png"] = "image/png",
@@ -31,14 +31,14 @@ namespace SharpFlare
 
 		public static async Task SendErrorFile(Request req, Response r, string[] args)
 		{
-			r["Content-Type"] = ContentType[req.Path];
-			r.Content = new MemoryStream(Files[req.Path]);
+			r["Content-Type"] = ContentType[req.Url.Path];
+			r.Content = new MemoryStream(Files[req.Url.Path]);
 		}
 
 		public static void Setup()
 		{
 			Hooks.Add("Error", "Default Error", HandleError);
-			Router.Host.Any.Route("/sharpflare/Proxima%20Nova-Regular.otf", SendErrorFile);
+			Router.Host.Any.Route("/sharpflare/Proxima Nova-Regular.otf", SendErrorFile);
 			Router.Host.Any.Route("/sharpflare/space.png", SendErrorFile);
 			Router.Host.Any.Route("/sharpflare/moon.png", SendErrorFile);
 			Router.Host.Any.Route("/sharpflare/flare.png", SendErrorFile);
@@ -73,7 +73,7 @@ namespace SharpFlare
 				msg = (inner.GetType().Name + ": " + inner.Message);
 
 				if (inner.StackTrace != null)
-					stack = Util.CleanAsyncStackTrace(inner.StackTrace).Replace("<", "&lt;").Replace(">", "&gt;").Replace("\n", "<br />");
+					stack = Util.CleanAsyncStackTrace(inner.StackTrace);
 				else
 					stack = "<i>Stacktrace not found.</i>";
 			}
@@ -82,7 +82,7 @@ namespace SharpFlare
 			string html =
 $@"<html>
 	<head>
-		<title>{title}</title>
+		<title>{Escape.Html(title)}</title>
 		<meta name=""viewport"" content=""width=820"">
 		<style>
 			@font-face
@@ -227,11 +227,11 @@ $@"<html>
 				<div class=flex>
 					<div class=wrapper>
 						<center>
-							<h1>{title}</h1>
-							<p>{msg}</p>
+							<h1>{Escape.Html(title)}</h1>
+							<p>{Escape.Html(msg)}</p>
 						</center>
 						<p class=code style=""display: table; margin: 0 auto;"">
-							{stack}
+							{Escape.Html(stack).Replace("\n", "<br />")}
 						</p>
 					</div>
 					<div class=""mountains flexgrow"">

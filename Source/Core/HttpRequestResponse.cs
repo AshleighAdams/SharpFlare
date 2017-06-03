@@ -12,13 +12,32 @@ namespace SharpFlare
 	{
 		public class Http1Request : Request
 		{
+			public class Http1RequestUrl : RequestUrl // http://user:pass@google.com/search?q=hi
+			{
+				public Http1RequestUrl() { }
+				public string Scheme { get; set; }   // http
+				public string Username { get; set; } // user
+				public string Password { get; set; } // pass
+				public string Host { get; set; }     // google.com
+				public int Port { get; set; }     // 80
+				public string OriginalPath { get; set; }
+				public string Path { get; set; }     // /search
+				public string Query { get; set; }    // q=hi
+			}
+
 			public Http1Request() { }
 
 			public void Setup(string[] lines, SocketStream stream, Socket sock)
 			{
-				headers.Clear();
+				this._Url.Scheme = this._Url.Username = this._Url.Password = this._Url.Host = this._Url.OriginalPath = this._Url.Path = this._Url.Query = "";
+				this._Url.Port = 80;
 
-				if(lines.Length < 1)
+				this.Content = stream; // so on an early exception, we can still deliver the error
+				this.IP = (sock.RemoteEndPoint as IPEndPoint).Address;
+				headers.Clear();
+				
+
+				if (lines.Length < 1)
 					throw new HttpException("No data present.", keepalive: false); 
 
 				string[] split = lines[0].Split(' ');
@@ -60,25 +79,60 @@ namespace SharpFlare
 					}
 				}
 
+				string path = split[1];
+				string host = this["Host"];
+				double version;
+				if (!double.TryParse(split[2].Replace("HTTP/", ""), out version))
+					throw new HttpException("Invalid version string.", Status.BadRequest);
+
+				string pathbit = split[1];
+				if (version >= 1.2 && path[0] != '/')
+				{
+					// extract the host, port, and scheme
+				}
 				
+				{ // parse the url
+					int portpos = host.IndexOf(':');
+					if (portpos == -1)
+						this._Url.Port = 80; // TODO: make this 443 for https
+					else
+					{
+						int port;
+						if (int.TryParse(host.Substring(portpos + 1), out port))
+							this._Url.Port = port;
+						else
+							throw new HttpException("Host's port is in an invalid format.", Status.BadRequest);
+						host = host.Substring(0, portpos);
+					}
+
+					this._Url.Host = host;
+
+					int query = pathbit.IndexOf('?');
+					if (query != -1)
+					{
+						this._Url.Query = pathbit.Substring(query + 1);
+						pathbit = pathbit.Substring(0, query);
+					}
+
+					pathbit = Unescape.Url(pathbit);
+					this._Url.Path = pathbit;
+				}
 
 				this.Method        = split[0];
-				this.Path          = split[1];
 				this.Protocol      = split[2];
-				this.Authority     = "todo";
-				this.Scheme        = "todo";
-				this.Host          = this["Host"];
-				this.Content       = stream;
-				this.IP            = (sock.RemoteEndPoint as IPEndPoint).Address;
-				this.ContentLength = 0;
+				
+				long content_length = 0;
+				string strcontent_length = this["Content-Length"];
+				if (strcontent_length != "")
+					if (!long.TryParse(strcontent_length, out content_length))
+						throw new HttpException("Failed to parse Content-Length.", Status.BadRequest);
+				this.ContentLength = content_length;
 			}
 
 			public string Protocol { get; private set; }
 			public string Method { get; private set; }
-			public string Path { get; private set; }
-			public string Authority { get; private set; }
-			public string Scheme { get; private set; }
-			public string Host { get; private set; }
+			public Http1RequestUrl _Url = new Http1RequestUrl();
+			public RequestUrl Url { get { return _Url; } }
 			public SocketStream Content { get; private set; }
 			public long ContentLength { get; private set; }
 
@@ -183,7 +237,7 @@ namespace SharpFlare
 
 			public void SetCookie(                   // Set-Cookie:
 				string name, string value,    // name=value;
-				DateTime?  expires  = null,   // Expires= or Max-Age=;
+				DateTime? expires  = null,   // Expires= or Max-Age=;
 				string    domain    = null,   // Domain=;
 				string    path      = null,   // Path=;
 				bool      secure    = false,  // Secure;

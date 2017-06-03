@@ -112,13 +112,13 @@ namespace SharpFlare
 			Request req = (Request)args[0];
 			Response res = (Response)args[1];
 
-			Host host = Host.MatchDomain(req.Host);
-			Route route = host.MatchRoute(req.Path);
+			Host host = Host.MatchDomain(req.Url.Host);
+			Route route = host.MatchRoute(req.Url.Path);
 
 			if (route == null)
-				throw new HttpException($"{req.Path} could not be found.", Status.NotFound);
+				throw new HttpException($"{req.Url.Path} could not be found.", Status.NotFound);
 
-			await route.Generator(req, res, new string[] { req.Path });
+			await route.Generator(req, res, new string[] { req.Url.Path });
 			await res.Finalize();
 
 			return false;

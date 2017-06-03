@@ -107,8 +107,8 @@ namespace SharpFlare
 
 						try
 						{
-							req.Setup(lines, str, socket);
 							res.Setup(str, req);
+							req.Setup(lines, str, socket);
 
 							await Hooks.Call("Request", req, res);
 
@@ -139,9 +139,17 @@ namespace SharpFlare
 						}
 						catch (Exception ex)
 						{
-							Logger.GlobalLogger.Message(Logger.Level.Error, $"{req.Method} {req.Path} Exception: {ex}");
-							res.StatusCode = Status.InternalServerError;
-							await Hooks.Call("Error", req, res, new HttpException(ex, ex.Message, res.StatusCode));
+							Logger.GlobalLogger.Message(Logger.Level.Error, $"{req.Method} {req.Url.Path} Exception: {ex}");
+							try
+							{
+								
+								res.StatusCode = Status.InternalServerError;
+								await Hooks.Call("Error", req, res, new HttpException(ex, ex.Message, res.StatusCode));
+							}
+							catch(Exception ex2)
+							{
+								Logger.GlobalLogger.Message(Logger.Level.Error, $"Exception in exception handler: {ex2}");
+							}
 						}
 						// */
 					}

@@ -31,14 +31,23 @@ namespace SharpFlare
 			}
 		}
 
+		public interface RequestUrl // http://user:pass@google.com/./dir/../search?q=hi
+		{
+			string Scheme { get; }       // http
+			string Username { get; }     // user
+			string Password { get; }     // pass
+			string Host { get; }         // google.com
+			int    Port { get; }         // 80
+			string OriginalPath { get; } // /./dir/../search
+			string Path { get; }         // /search
+			string Query { get; }        // q=hi
+		}
+
 		public interface Request
 		{
 			string Protocol { get; }
 			string Method { get; }
-			string Host { get; }
-			string Path { get; }
-			string Authority { get; }
-			string Scheme { get; }
+			RequestUrl Url { get; }
 			SocketStream Content { get; }
 			long ContentLength { get; }
 			IPAddress IP { get; }
