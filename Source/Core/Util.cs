@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq.Expressions;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -30,10 +33,12 @@ namespace SharpFlare
 
 		// gets a more traditional and readable stack trace
 		static Regex asyncregex = new Regex("at (?<namespace>.*)\\.<(?<method>.*)>(?<bit>.*).MoveNext\\(\\) in (?<file>.*):line (?<line>[0-9]*)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
-		static Regex syncregex = new Regex("at (?<method>.*) in (?<file>.*):line (?<line>[0-9]*)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+		static Regex syncregex = new Regex("at (?<namespace>.*)\\.(?<method>.*) in (?<file>.*):line (?<line>[0-9]*)", RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
 		[CLI.Option("Show the directory on public stack traces.", "debug-stack-show-directory")]
 		public static bool StackShowDir = false;
+		[CLI.Option("Show the directory on public stack traces.", "debug-stack-show-namespace")]
+		public static bool StackShowNamespace = false;
 
 		public static string SourceCodeBase = "";
 		public static string CleanAsyncStackTrace(string stacktrace, bool ispublic = true)
@@ -60,9 +65,12 @@ namespace SharpFlare
 						string file = match.Groups["file"].Value;
 						string linenum = match.Groups["line"].Value;
 
+						if (StackShowNamespace)
+							method = $"{@namespace}.{method}";
+
 						// sanatize the file
 						file = file.Replace('\\', '/').Replace(Util.SourceCodeBase, "SharpFlare");
-						line = $"{file}:{linenum} in async {@namespace}.{method}(...)";
+						line = $"{file}:{linenum} in async {method}(...)";
 						sb.AppendLine(line);
 					}
 				}
@@ -72,9 +80,13 @@ namespace SharpFlare
 
 					if (match.Success)
 					{
+						string @namespace = match.Groups["namespace"].Value;
 						string method = match.Groups["method"].Value;
 						string file = match.Groups["file"].Value;
 						string linenum = match.Groups["line"].Value;
+
+						if (StackShowNamespace)
+							method = $"{@namespace}.{method}";
 
 						// sanatize the file
 						file = file.Replace('\\', '/').Replace(Util.SourceCodeBase, "SharpFlare");
@@ -89,9 +101,258 @@ namespace SharpFlare
 
 			return sb.ToString();
 		}
+
+		public static char SlugSeperator = '-';
+		public static Dictionary<char, bool> SlugReadable = new Dictionary<char, bool>
+		{
+			['-'] = true, /* ['.'] = true, ['_'] = true, */
+			['a'] = true, ['b'] = true, ['c'] = true, ['d'] = true, ['e'] = true, ['f'] = true, ['g'] = true, ['h'] = true, ['i'] = true,
+			['j'] = true, ['k'] = true, ['l'] = true, ['m'] = true, ['n'] = true, ['o'] = true, ['p'] = true, ['q'] = true, ['r'] = true,
+			['s'] = true, ['t'] = true, ['u'] = true, ['v'] = true, ['w'] = true, ['x'] = true, ['y'] = true, ['z'] = true,
+
+			['A'] = true, ['B'] = true, ['C'] = true, ['D'] = true, ['E'] = true, ['F'] = true, ['G'] = true, ['H'] = true, ['I'] = true,
+			['J'] = true, ['K'] = true, ['L'] = true, ['M'] = true, ['N'] = true, ['O'] = true, ['P'] = true, ['Q'] = true, ['R'] = true,
+			['S'] = true, ['T'] = true, ['U'] = true, ['V'] = true, ['W'] = true, ['X'] = true, ['Y'] = true, ['Z'] = true,
+
+			['0'] = true, ['1'] = true, ['2'] = true, ['3'] = true, ['4'] = true, ['5'] = true, ['6'] = true, ['7'] = true, ['8'] = true, ['9'] = true,
+		};
+		public static Dictionary<char, string> SlugAliases = new Dictionary<char, string>
+		{
+			[' '] = " ",
+			['_'] = " ",
+			['.'] = " ",
+			[','] = " ",
+			[':'] = " ",
+			[';'] = " ",
+			['&'] = " and ",
+			['@'] = " at ",
+			['%'] = " percent ",
+			['-'] = " minus ",
+			['+'] = " plus ",
+			['/'] = " div ",
+			['*'] = " mul ",
+			['$'] = " usd",
+			['£'] = " gbp",
+			// common accented letters
+			['á'] = "a", ['Á'] = "A", ['à'] = "a", ['À'] = "A", ['â'] = "a", ['Â'] = "A", ['ä'] = "a", ['Ä'] = "A", ['ã'] = "a", ['Ã'] = "A",
+			['å'] = "a", ['Å'] = "A", ['æ'] = "ae", ['Æ'] = "AE", ['ç'] = "c", ['Ç'] = "C", ['é'] = "e", ['É'] = "E", ['è'] = "e", ['È'] = "E",
+			['ê'] = "e", ['Ê'] = "E", ['ë'] = "e", ['Ë'] = "E", ['í'] = "i", ['Í'] = "I", ['ì'] = "i", ['Ì'] = "I", ['î'] = "i", ['Î'] = "I",
+			['ï'] = "i", ['Ï'] = "I", ['ñ'] = "n", ['Ñ'] = "N", ['ó'] = "o", ['Ó'] = "O", ['ò'] = "o", ['Ò'] = "O", ['ô'] = "o", ['Ô'] = "O",
+			['ö'] = "o", ['Ö'] = "O", ['õ'] = "o", ['Õ'] = "O", ['ø'] = "o", ['Ø'] = "O", ['œ'] = "oe", ['Œ'] = "CE", ['ß'] = "ss", ['ú'] = "u",
+			['Ú'] = "U", ['ù'] = "u", ['Ù'] = "U", ['û'] = "u", ['Û'] = "U", ['ü'] = "u", ['Ü'] = "U",
+			//[''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "",
+		};
+
+		static string Slug(char input)
+		{
+			string ret; bool _;
+			if (SlugAliases.TryGetValue(input, out ret))
+				return ret;
+			if (SlugReadable.TryGetValue(input, out _))
+				return ret;
+			return ""; // idk
+		}
+		public static string Slug(string input)
+		{
+			{
+				StringBuilder sb = new StringBuilder(input.Length);
+				foreach (char c in input)
+					sb.Append(Slug(c));
+				input = sb.ToString();
+			}
+
+			input = Regex.Replace(input, "[\\s]*", $"SlugSeperator"); // replace any whitespace with the seperator
+			input = Regex.Replace(input, $"[{SlugSeperator}]{{2,}}", $"SlugSeperator"); // turn many seperators together into just one
+			input = input.Trim(SlugSeperator); // trim seperators off of the begining and end
+
+			return input;
+		}
 	}
 
-	// https://stackoverflow.com/questions/719020/is-there-an-async-version-of-directoryinfo-getfiles-directory-getdirectories-i
+	public static class Escape
+	{
+		public static string HtmlCustom(string input, bool strict = true)
+		{
+			StringBuilder sb = new StringBuilder(input.Length);
+
+			string newline = "\n";
+			string tab = "\t";
+
+			if (strict)
+			{
+				newline = "<br />";
+				tab = "&nbsp;&nbsp;&nbsp;&nbsp;";
+			}
+			foreach (char c in input)
+				switch (c)
+				{
+					case ' ':
+					case '!':
+					case '#':
+					case '$':
+					case '%':
+					case '(':
+					case ')':
+					case '*':
+					case '+':
+					case ',':
+					case '-':
+					case '.':
+					case '/':
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+					case ':':
+					case ';':
+					case '=':
+					case '?':
+					case '@':
+					case 'A':
+					case 'B':
+					case 'C':
+					case 'D':
+					case 'E':
+					case 'F':
+					case 'G':
+					case 'H':
+					case 'I':
+					case 'J':
+					case 'K':
+					case 'L':
+					case 'M':
+					case 'N':
+					case 'O':
+					case 'P':
+					case 'Q':
+					case 'R':
+					case 'S':
+					case 'T':
+					case 'U':
+					case 'V':
+					case 'W':
+					case 'X':
+					case 'Y':
+					case 'Z':
+					case '[':
+					case '\\':
+					case ']':
+					case '^':
+					case '_':
+					case '`':
+					case 'a':
+					case 'b':
+					case 'c':
+					case 'd':
+					case 'e':
+					case 'f':
+					case 'g':
+					case 'h':
+					case 'i':
+					case 'j':
+					case 'k':
+					case 'l':
+					case 'm':
+					case 'n':
+					case 'o':
+					case 'p':
+					case 'q':
+					case 'r':
+					case 's':
+					case 't':
+					case 'u':
+					case 'v':
+					case 'w':
+					case 'x':
+					case 'y':
+					case 'z':
+					case '{':
+					case '|':
+					case '}':
+					case '~':
+						sb.Append(c);
+						break;
+					case '&':
+						sb.Append("&amp;");
+						break;
+					case '"':
+						sb.Append("&quot;");
+						break;
+					case '\'':
+						sb.Append("&apos;");
+						break;
+					case '<':
+						sb.Append("&lt;");
+						break;
+					case '>':
+						sb.Append("&gt;");
+						break;
+					case '\r':
+						break;
+					case '\n':
+						sb.Append(newline);
+						break;
+					case '\t':
+						sb.Append(tab);
+						break;
+					default:
+						sb.Append($"&#{(Int64)c};");
+						break;
+				}
+
+			return sb.ToString();
+		}
+		public static string Html(string input)
+		{
+			return WebUtility.HtmlEncode(input);
+		}
+		public static string Url(string input)
+		{
+			return WebUtility.UrlEncode(input);
+			/*
+			// this isn't UTF-8 friendly
+			return Uri.EscapeDataString(input)
+				.Replace("%20", "+")
+				.Replace("%21", "!")
+				.Replace("%28", "(")
+				.Replace("%29", ")")
+				.Replace("%2A", "*")
+				.Replace("~", "%7E");
+			*/
+		}
+		public static string Shell(string input, bool quote = true)
+		{
+			if (quote)
+			{
+				return '"' + input.Replace("\\", "\\\\").Replace("`", "\\`").Replace("$", "\\$").Replace("\"", "\\") + '"';
+			}
+			throw new NotImplementedException();
+		}
+	}
+
+	public static class Unescape
+	{
+		public static string Html(string input)
+		{
+			return WebUtility.HtmlDecode(input);
+		}
+		public static string Url(string input)
+		{
+			return WebUtility.UrlDecode(input);
+		}
+	}
+	
+
+	/* https://stackoverflow.com/questions/719020/is-there-an-async-version-of-directoryinfo-getfiles-directory-getdirectories-i  */
+	// if the debugger breaks on these below, that is because Just My Code is enabled, stopping Task.Run handling the exception
+	// Maybe: Figure out how to use [DebuggerNonUserCode] with lambadas
+	
 	public static class DirectoryAsync
 	{
 		public static Task<System.IO.DirectoryInfo> GetParentAsync(String path)
