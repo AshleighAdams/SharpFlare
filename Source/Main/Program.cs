@@ -157,10 +157,13 @@ namespace SharpFlare
 			// recover the source location to remove it later on
 			try { throw new Exception(); } catch(Exception ex)
 			{
-				string path = Regex.Match(ex.StackTrace.Split('\n')[0].Trim(), "in (.*):line").Groups[1].Value;
-				string[] parts = path.Split('/', '\\');
-				path = string.Join("/", parts, 0, parts.Length - 2);
-				Util.SourceCodeBase = path;
+				try
+				{
+					string path = Regex.Match(ex.StackTrace.Split('\n')[0].Trim(), "in (.*):line").Groups[1].Value;
+					string[] parts = path.Split('/', '\\');
+					path = string.Join("/", parts, 0, parts.Length - 2);
+					Util.SourceCodeBase = path;
+				} catch { }
 			}
 
 			if(Version)

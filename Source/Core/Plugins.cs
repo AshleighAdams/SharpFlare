@@ -66,8 +66,7 @@ namespace SharpFlare
 		public Plugin(string path)
 		{
 			basepath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-			AppDomain.MonitoringIsEnabled = true; // todo performance
-
+			
 			FullPath = Path.GetFullPath(path);
 			string dir = Path.GetDirectoryName(FullPath);
 
@@ -86,11 +85,15 @@ namespace SharpFlare
 			Permissions.AddPermission(new ReflectionPermission(PermissionState.Unrestricted));
 
 
-			// class PluginRemote : MarshalByRefObject  
-			StrongName pluginhost = typeof(PluginHost).Assembly.Evidence.GetHostEvidence<StrongName>();
-
-			Sandbox = AppDomain.CreateDomain(FullPath, null, Setup, Permissions, pluginhost);
-
+			// class PluginRemote : MarshalByRefObject
+			//System.Security.Policy.Evidence
+			//StrongName pluginhost = typeof(PluginHost).Assembly.Evidence.GetHostEvidence<StrongName>();
+			//AppDomain.MonitoringIsEnabled = true; // todo performance
+			// var _x = Sandbox.MonitoringSurvivedMemorySize;// Sandbox.MonitoringTotalAllocatedMemorySize;
+			// var _y = Sandbox.MonitoringTotalProcessorTime;
+			StrongName[] list = new StrongName[0];
+			Sandbox = AppDomain.CreateDomain(FullPath, null, Setup, Permissions, /*pluginhost*/ list);
+			
 			//Sandbox.AssemblyResolve += Sandbox_AssemblyResolve;
 
 			//Remote = (PluginHost)Sandbox.CreateInstanceFromAndUnwrap(typeof(PluginHost).Assembly.ManifestModule.FullyQualifiedName, typeof(PluginHost).FullName);
@@ -139,8 +142,7 @@ namespace SharpFlare
 				}
 			}
 			
-			var _x = Sandbox.MonitoringSurvivedMemorySize;// Sandbox.MonitoringTotalAllocatedMemorySize;
-			var _y = Sandbox.MonitoringTotalProcessorTime;
+			
 
 			//IPlugin plugin = (IPlugin)Sandbox.CreateInstanceAndUnwrap(typeof(IPlugin).Assembly.ManifestModule.FullyQualifiedName, typeof(IPlugin).FullName);
 			//Activator.CreateInstanceFrom(Sandbox, typeof(IPlugin).Assembly.ManifestModule.FullyQualifiedName, typeof(IPlugin).FullName);
