@@ -27,6 +27,9 @@ namespace SharpFlare
 
 			public Http1Request() { }
 
+			// setup vars put outside to ease the garbage collector strain
+			LinkedList<string> _setup_path_stack = new LinkedList<string>();
+			static char[] _setup_split_space = new char[] { ' ' };
 			public void Setup(string[] lines, SocketStream stream, Socket sock)
 			{
 				this._Url.Scheme = this._Url.Username = this._Url.Password = this._Url.Host = this._Url.OriginalPath = this._Url.Path = this._Url.Query = "";
@@ -40,7 +43,7 @@ namespace SharpFlare
 				if (lines.Length < 1)
 					throw new HttpException("No data present.", keepalive: false); 
 
-				string[] split = lines[0].Split(' ');
+				string[] split = lines[0].Split(_setup_split_space, 3);
 
 				if(split.Length != 3)
 					throw new HttpException("Invalid request line.", keepalive: false); 
@@ -52,8 +55,7 @@ namespace SharpFlare
 					string line = lines[i];
 					if(string.IsNullOrWhiteSpace(line))
 						break;
-
-
+					
 					if(line[0] == ' ' || line[0] == '\t')
 					{
 						if(string.IsNullOrEmpty(lastheader))
@@ -73,8 +75,6 @@ namespace SharpFlare
 						string value = line.Substring(index + 1).Trim();
 
 						headers[key] = value;
-						Console.WriteLine($"'{key}' = '{value}'");
-
 						lastheader = key;
 					}
 				}
@@ -114,8 +114,31 @@ namespace SharpFlare
 						pathbit = pathbit.Substring(0, query);
 					}
 
-					pathbit = Unescape.Url(pathbit);
-					this._Url.Path = pathbit;
+					pathbit = Unescape.Url(pathbit).Replace('\\', '/');
+					
+
+					// canonicalize the path /a/b/c/../z -> /a/b/z
+					int i = 0;
+					while (i < pathbit.Length)
+					{
+						int start = i;
+						int end;
+						for (end = i; end < pathbit.Length && pathbit[end] != '/'; end++)
+							;
+						i = end + 1;
+						int len = end - start; // either it is a slash, or it went out of bounds by 1 anyway
+
+						if (len == 0) // is it an empty node? continue
+							continue;
+						else if (len == 1 && pathbit[start] == '.')
+							continue;
+						else if (len == 2 && pathbit[start] == '.' && pathbit[start + 1] == '.')
+							_setup_path_stack.RemoveLast();
+						else
+							_setup_path_stack.AddLast(pathbit.Substring(start, len));
+					}
+					this._Url.Path = pathbit = $"/{string.Join("/", _setup_path_stack)}";
+					_setup_path_stack.Clear();
 				}
 
 				this.Method        = split[0];
@@ -245,6 +268,7 @@ namespace SharpFlare
 				string    samesite  = null    // SameSite=
 			)
 			{
+				throw new NotImplementedException();
 			}
 		}
 	}
