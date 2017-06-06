@@ -16,7 +16,7 @@ public class TestPlugin
 	[Route("/test_bad")]
 	public async Task TestBad(Request req, Response res, string[] args)
 	{
-		res.Content = await FileAsync.OpenAsync(@"C:\Windows\System32\drivers\etc\hosts", FileMode.Open);
+		res.Content = await FileAsync.OpenAsync(@"/etc/hosts", FileMode.Open);
 	}
 	[Route("/test_good")]
 	public async Task TestGood(Request req, Response res, string[] args)

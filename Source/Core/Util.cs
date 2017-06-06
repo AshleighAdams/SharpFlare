@@ -7,6 +7,7 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SharpFlare
@@ -17,18 +18,28 @@ namespace SharpFlare
 		static string[] nths = { "th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th" };
 		public static string Nth(int n)
 		{
-			int mod100 = n % 100;
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				int mod100 = n % 100;
 
-			if(mod100 >= 11 && mod100 <= 13)
-				return nths[0];
-			return nths[mod100 % 10];
+				if (mod100 >= 11 && mod100 <= 13)
+					return nths[0];
+				return nths[mod100 % 10];
+			}
 		}
 
 		public static string ToHttpDate(this DateTime when)
 		{
-			//  Sun, 06 Nov 1994 08:49:37 GMT
-			DateTime utc = when.ToUniversalTime();
-			return utc.ToString("ddd, dd MMM yyyy HH':'mm':'ss 'GMT'");
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				//  Sun, 06 Nov 1994 08:49:37 GMT
+				DateTime utc = when.ToUniversalTime();
+				return utc.ToString("ddd, dd MMM yyyy HH':'mm':'ss 'GMT'");
+			}
 		}
 
 		// gets a more traditional and readable stack trace
@@ -43,63 +54,68 @@ namespace SharpFlare
 		public static string SourceCodeBase = "";
 		public static string CleanAsyncStackTrace(string stacktrace, bool ispublic = true)
 		{
-			string[] lines = stacktrace.Split('\n');
-			StringBuilder sb = new StringBuilder();
-			
-			foreach (string _ in lines)
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
 			{
-				string line = _.Trim();
+				string[] lines = stacktrace.Split('\n');
+				StringBuilder sb = new StringBuilder();
 
-				if (line == "--- End of stack trace from previous location where exception was thrown ---")
-					continue;
-				if (line.Contains("System.Runtime.CompilerServices.TaskAwaiter"))
-					continue;
-
-				if (line.Contains(".MoveNext()"))
+				foreach (string _ in lines)
 				{
-					Match match = asyncregex.Match(line);
-					if (match.Success)
+					string line = _.Trim();
+
+					if (line == "--- End of stack trace from previous location where exception was thrown ---")
+						continue;
+					if (line.Contains("System.Runtime.CompilerServices.TaskAwaiter"))
+						continue;
+
+					if (line.Contains(".MoveNext()"))
 					{
-						string @namespace = match.Groups["namespace"].Value;
-						string method = match.Groups["method"].Value;
-						string file = match.Groups["file"].Value;
-						string linenum = match.Groups["line"].Value;
+						Match match = asyncregex.Match(line);
+						if (match.Success)
+						{
+							string @namespace = match.Groups["namespace"].Value;
+							string method = match.Groups["method"].Value;
+							string file = match.Groups["file"].Value;
+							string linenum = match.Groups["line"].Value;
 
-						if (StackShowNamespace)
-							method = $"{@namespace}.{method}";
+							if (StackShowNamespace)
+								method = $"{@namespace}.{method}";
 
-						// sanatize the file
-						file = file.Replace('\\', '/').Replace(Util.SourceCodeBase, "SharpFlare");
-						line = $"{file}:{linenum} in async {method}(...)";
-						sb.AppendLine(line);
+							// sanatize the file
+							file = file.Replace('\\', '/').Replace(Util.SourceCodeBase, "SharpFlare");
+							line = $"{file}:{linenum} in async {method}(...)";
+							sb.AppendLine(line);
+						}
 					}
-				}
-				else
-				{
-					Match match = syncregex.Match(line);
-
-					if (match.Success)
+					else
 					{
-						string @namespace = match.Groups["namespace"].Value;
-						string method = match.Groups["method"].Value;
-						string file = match.Groups["file"].Value;
-						string linenum = match.Groups["line"].Value;
+						Match match = syncregex.Match(line);
 
-						if (StackShowNamespace)
-							method = $"{@namespace}.{method}";
+						if (match.Success)
+						{
+							string @namespace = match.Groups["namespace"].Value;
+							string method = match.Groups["method"].Value;
+							string file = match.Groups["file"].Value;
+							string linenum = match.Groups["line"].Value;
 
-						// sanatize the file
-						file = file.Replace('\\', '/').Replace(Util.SourceCodeBase, "SharpFlare");
+							if (StackShowNamespace)
+								method = $"{@namespace}.{method}";
 
-						line = $"{file}:{linenum} in {method}";
-						sb.AppendLine(line);
+							// sanatize the file
+							file = file.Replace('\\', '/').Replace(Util.SourceCodeBase, "SharpFlare");
+
+							line = $"{file}:{linenum} in {method}";
+							sb.AppendLine(line);
+						}
 					}
+
+
 				}
 
-				
+				return sb.ToString();
 			}
-
-			return sb.ToString();
 		}
 
 		public static char SlugSeperator = '-';
@@ -142,30 +158,41 @@ namespace SharpFlare
 			['Ú'] = "U", ['ù'] = "u", ['Ù'] = "U", ['û'] = "u", ['Û'] = "U", ['ü'] = "u", ['Ü'] = "U",
 			//[''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "", [''] = "",
 		};
+		
 
 		static string Slug(char input)
 		{
-			string ret; bool _;
-			if (SlugAliases.TryGetValue(input, out ret))
-				return ret;
-			if (SlugReadable.TryGetValue(input, out _))
-				return ret;
-			return ""; // idk
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				string ret; bool _;
+				if (SlugAliases.TryGetValue(input, out ret))
+					return ret;
+				if (SlugReadable.TryGetValue(input, out _))
+					return ret;
+				return ""; // idk
+			}
 		}
 		public static string Slug(string input)
 		{
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
 			{
-				StringBuilder sb = new StringBuilder(input.Length);
-				foreach (char c in input)
-					sb.Append(Slug(c));
-				input = sb.ToString();
+				{
+					StringBuilder sb = new StringBuilder(input.Length);
+					foreach (char c in input)
+						sb.Append(Slug(c));
+					input = sb.ToString();
+				}
+
+				input = Regex.Replace(input, "[\\s]*", $"SlugSeperator"); // replace any whitespace with the seperator
+				input = Regex.Replace(input, $"[{SlugSeperator}]{{2,}}", $"SlugSeperator"); // turn many seperators together into just one
+				input = input.Trim(SlugSeperator); // trim seperators off of the begining and end
+
+				return input;
 			}
-
-			input = Regex.Replace(input, "[\\s]*", $"SlugSeperator"); // replace any whitespace with the seperator
-			input = Regex.Replace(input, $"[{SlugSeperator}]{{2,}}", $"SlugSeperator"); // turn many seperators together into just one
-			input = input.Trim(SlugSeperator); // trim seperators off of the begining and end
-
-			return input;
 		}
 	}
 
@@ -173,19 +200,23 @@ namespace SharpFlare
 	{
 		public static string HtmlCustom(string input, bool strict = true)
 		{
-			StringBuilder sb = new StringBuilder(input.Length);
-
-			string newline = "\n";
-			string tab = "\t";
-
-			if (strict)
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
 			{
-				newline = "<br />";
-				tab = "&nbsp;&nbsp;&nbsp;&nbsp;";
-			}
-			foreach (char c in input)
-				switch (c)
+				StringBuilder sb = new StringBuilder(input.Length);
+
+				string newline = "\n";
+				string tab = "\t";
+
+				if (strict)
 				{
+					newline = "<br />";
+					tab = "&nbsp;&nbsp;&nbsp;&nbsp;";
+				}
+				foreach (char c in input)
+					switch (c)
+					{
 					case ' ':
 					case '!':
 					case '#':
@@ -304,35 +335,51 @@ namespace SharpFlare
 					default:
 						sb.Append($"&#{(Int64)c};");
 						break;
-				}
+					}
 
-			return sb.ToString();
+				return sb.ToString();
+			}
 		}
 		public static string Html(string input)
 		{
-			return WebUtility.HtmlEncode(input);
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				return WebUtility.HtmlEncode(input);
+			}
 		}
 		public static string Url(string input)
 		{
-			return WebUtility.UrlEncode(input);
-			/*
-			// this isn't UTF-8 friendly
-			return Uri.EscapeDataString(input)
-				.Replace("%20", "+")
-				.Replace("%21", "!")
-				.Replace("%28", "(")
-				.Replace("%29", ")")
-				.Replace("%2A", "*")
-				.Replace("~", "%7E");
-			*/
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				return WebUtility.UrlEncode(input);
+				/*
+				// this isn't UTF-8 friendly
+				return Uri.EscapeDataString(input)
+					.Replace("%20", "+")
+					.Replace("%21", "!")
+					.Replace("%28", "(")
+					.Replace("%29", ")")
+					.Replace("%2A", "*")
+					.Replace("~", "%7E");
+				*/
+			}
 		}
 		public static string Shell(string input, bool quote = true)
 		{
-			if (quote)
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
 			{
-				return '"' + input.Replace("\\", "\\\\").Replace("`", "\\`").Replace("$", "\\$").Replace("\"", "\\") + '"';
+				if (quote)
+				{
+					return '"' + input.Replace("\\", "\\\\").Replace("`", "\\`").Replace("$", "\\$").Replace("\"", "\\") + '"';
+				}
+				throw new NotImplementedException();
 			}
-			throw new NotImplementedException();
 		}
 	}
 
@@ -340,11 +387,21 @@ namespace SharpFlare
 	{
 		public static string Html(string input)
 		{
-			return WebUtility.HtmlDecode(input);
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				return WebUtility.HtmlDecode(input);
+			}
 		}
 		public static string Url(string input)
 		{
-			return WebUtility.UrlDecode(input);
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				return WebUtility.UrlDecode(input);
+			}
 		}
 	}
 	

@@ -32,124 +32,129 @@ namespace SharpFlare
 			static char[] _setup_split_space = new char[] { ' ' };
 			public void Setup(string[] lines, SocketStream stream, Socket sock)
 			{
-				this._Url.Scheme = this._Url.Username = this._Url.Password = this._Url.Host = this._Url.OriginalPath = this._Url.Path = this._Url.Query = "";
-				this._Url.Port = 80;
-
-				this.Content = stream; // so on an early exception, we can still deliver the error
-				this.IP = (sock.RemoteEndPoint as IPEndPoint).Address;
-				headers.Clear();
-				
-
-				if (lines.Length < 1)
-					throw new HttpException("No data present.", keepalive: false); 
-
-				string[] split = lines[0].Split(_setup_split_space, 3);
-
-				if(split.Length != 3)
-					throw new HttpException("Invalid request line.", keepalive: false); 
-				
-
-				string lastheader = ""; // for continuations
-				for(int i = 1; i < lines.Length; i++)
+#if SHARPFLARE_PROFILE
+			using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
 				{
-					string line = lines[i];
-					if(string.IsNullOrWhiteSpace(line))
-						break;
-					
-					if(line[0] == ' ' || line[0] == '\t')
+					this._Url.Scheme = this._Url.Username = this._Url.Password = this._Url.Host = this._Url.OriginalPath = this._Url.Path = this._Url.Query = "";
+					this._Url.Port = 80;
+
+					this.Content = stream; // so on an early exception, we can still deliver the error
+					this.IP = (sock.RemoteEndPoint as IPEndPoint).Address;
+					headers.Clear();
+
+
+					if (lines.Length < 1)
+						throw new HttpException("No data present.", keepalive: false);
+
+					string[] split = lines[0].Split(_setup_split_space, 3);
+
+					if (split.Length != 3)
+						throw new HttpException("Invalid request line.", keepalive: false);
+
+
+					string lastheader = ""; // for continuations
+					for (int i = 1; i < lines.Length; i++)
 					{
-						if(string.IsNullOrEmpty(lastheader))
-							throw new HttpException("No previous header to append to.", status: Http.Status.BadRequest, keepalive: false);
-						this[lastheader] += ' ' + line.TrimEnd();
-					}
-					else
-					{
-						int index = line.IndexOf(':');
+						string line = lines[i];
+						if (string.IsNullOrWhiteSpace(line))
+							break;
 
-						if(index == 0)
-							throw new HttpException($"The {i}{Util.Nth(i)} header key is empty.", status: Http.Status.BadRequest, keepalive: false);
-						else if(index < 0)
-							throw new HttpException($"The {i}{Util.Nth(i)} header value is non existant.", status: Http.Status.BadRequest, keepalive: false);
-
-						string key = line.Substring(0, index);
-						string value = line.Substring(index + 1).Trim();
-
-						headers[key] = value;
-						lastheader = key;
-					}
-				}
-
-				string path = split[1];
-				string host = this["Host"];
-				double version;
-				if (!double.TryParse(split[2].Replace("HTTP/", ""), out version))
-					throw new HttpException("Invalid version string.", Status.BadRequest);
-
-				string pathbit = split[1];
-				if (version >= 1.2 && path[0] != '/')
-				{
-					// extract the host, port, and scheme
-				}
-				
-				{ // parse the url
-					int portpos = host.IndexOf(':');
-					if (portpos == -1)
-						this._Url.Port = 80; // TODO: make this 443 for https
-					else
-					{
-						int port;
-						if (int.TryParse(host.Substring(portpos + 1), out port))
-							this._Url.Port = port;
+						if (line[0] == ' ' || line[0] == '\t')
+						{
+							if (string.IsNullOrEmpty(lastheader))
+								throw new HttpException("No previous header to append to.", status: Http.Status.BadRequest, keepalive: false);
+							this[lastheader] += ' ' + line.TrimEnd();
+						}
 						else
-							throw new HttpException("Host's port is in an invalid format.", Status.BadRequest);
-						host = host.Substring(0, portpos);
+						{
+							int index = line.IndexOf(':');
+
+							if (index == 0)
+								throw new HttpException($"The {i}{Util.Nth(i)} header key is empty.", status: Http.Status.BadRequest, keepalive: false);
+							else if (index < 0)
+								throw new HttpException($"The {i}{Util.Nth(i)} header value is non existant.", status: Http.Status.BadRequest, keepalive: false);
+
+							string key = line.Substring(0, index);
+							string value = line.Substring(index + 1).Trim();
+
+							headers[key] = value;
+							lastheader = key;
+						}
 					}
 
-					this._Url.Host = host;
+					string path = split[1];
+					string host = this["Host"];
+					double version;
+					if (!double.TryParse(split[2].Replace("HTTP/", ""), out version))
+						throw new HttpException("Invalid version string.", Status.BadRequest);
 
-					int query = pathbit.IndexOf('?');
-					if (query != -1)
+					string pathbit = split[1];
+					if (version >= 1.2 && path[0] != '/')
 					{
-						this._Url.Query = pathbit.Substring(query + 1);
-						pathbit = pathbit.Substring(0, query);
+						// extract the host, port, and scheme
 					}
 
-					pathbit = Unescape.Url(pathbit).Replace('\\', '/');
-					
-
-					// canonicalize the path /a/b/c/../z -> /a/b/z
-					int i = 0;
-					while (i < pathbit.Length)
-					{
-						int start = i;
-						int end;
-						for (end = i; end < pathbit.Length && pathbit[end] != '/'; end++)
-							;
-						i = end + 1;
-						int len = end - start; // either it is a slash, or it went out of bounds by 1 anyway
-
-						if (len == 0) // is it an empty node? continue
-							continue;
-						else if (len == 1 && pathbit[start] == '.')
-							continue;
-						else if (len == 2 && pathbit[start] == '.' && pathbit[start + 1] == '.')
-							_setup_path_stack.RemoveLast();
+					{ // parse the url
+						int portpos = host.IndexOf(':');
+						if (portpos == -1)
+							this._Url.Port = 80; // TODO: make this 443 for https
 						else
-							_setup_path_stack.AddLast(pathbit.Substring(start, len));
-					}
-					this._Url.Path = pathbit = $"/{string.Join("/", _setup_path_stack)}";
-					_setup_path_stack.Clear();
-				}
+						{
+							int port;
+							if (int.TryParse(host.Substring(portpos + 1), out port))
+								this._Url.Port = port;
+							else
+								throw new HttpException("Host's port is in an invalid format.", Status.BadRequest);
+							host = host.Substring(0, portpos);
+						}
 
-				this.Method        = split[0];
-				this.Protocol      = split[2];
-				
-				long content_length = 0;
-				string strcontent_length = this["Content-Length"];
-				if (strcontent_length != "")
-					if (!long.TryParse(strcontent_length, out content_length))
-						throw new HttpException("Failed to parse Content-Length.", Status.BadRequest);
-				this.ContentLength = content_length;
+						this._Url.Host = host;
+
+						int query = pathbit.IndexOf('?');
+						if (query != -1)
+						{
+							this._Url.Query = pathbit.Substring(query + 1);
+							pathbit = pathbit.Substring(0, query);
+						}
+
+						pathbit = Unescape.Url(pathbit).Replace('\\', '/');
+
+
+						// canonicalize the path /a/b/c/../z -> /a/b/z
+						int i = 0;
+						while (i < pathbit.Length)
+						{
+							int start = i;
+							int end;
+							for (end = i; end < pathbit.Length && pathbit[end] != '/'; end++)
+								;
+							i = end + 1;
+							int len = end - start; // either it is a slash, or it went out of bounds by 1 anyway
+
+							if (len == 0) // is it an empty node? continue
+								continue;
+							else if (len == 1 && pathbit[start] == '.')
+								continue;
+							else if (len == 2 && pathbit[start] == '.' && pathbit[start + 1] == '.')
+								_setup_path_stack.RemoveLast();
+							else
+								_setup_path_stack.AddLast(pathbit.Substring(start, len));
+						}
+						this._Url.Path = pathbit = $"/{string.Join("/", _setup_path_stack)}";
+						_setup_path_stack.Clear();
+					}
+
+					this.Method = split[0];
+					this.Protocol = split[2];
+
+					long content_length = 0;
+					string strcontent_length = this["Content-Length"];
+					if (strcontent_length != "")
+						if (!long.TryParse(strcontent_length, out content_length))
+							throw new HttpException("Failed to parse Content-Length.", Status.BadRequest);
+					this.ContentLength = content_length;
+				}
 			}
 
 			public string Protocol { get; private set; }
@@ -166,20 +171,35 @@ namespace SharpFlare
 			{
 				get
 				{
-					string v;
-					if(!headers.TryGetValue(key, out v))
-						return "";
-					return v;
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+					{
+						string v;
+						if (!headers.TryGetValue(key, out v))
+							return "";
+						return v;
+					}
 				}
 				private set
 				{
-					headers[key] = value;
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+					{
+						headers[key] = value;
+					}
 				}
 			}
 
 			public string GetCookie(string name)
 			{
-				throw new NotImplementedException();
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					throw new NotImplementedException();
+				}
 			}
 		}
 
@@ -194,14 +214,28 @@ namespace SharpFlare
 
 			public Http1Response() { }
 
-			public void Setup(SocketStream str, Http1Request req)
+			public void Setup(SocketStream str)
 			{
-				stream = str;
-				Content = null;
-				headers.Clear();
-				Finalized = false;
-				StatusCode = Http.Status.Okay;
-				KeepAlive = req["Connection"].ToLower().Contains("keep-alive");
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					stream = str;
+					Content = null;
+					headers.Clear();
+					Finalized = false;
+					StatusCode = Http.Status.Okay;
+				}
+			}
+
+			public void Setup(Http1Request req)
+			{
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					KeepAlive = req["Connection"].ToLower().Contains("keep-alive");
+				}
 			}
 
 			public Status StatusCode { set; get; }
@@ -209,43 +243,49 @@ namespace SharpFlare
 			byte[] sendbuff = new byte[8192];
 			public async Task Finalize()
 			{
-				if(Finalized)
-					return;
-				Finalized = true;
-
-				if (KeepAlive)
-					this["Connection"] = "keep-alive";
-				else
-					this["Connection"] = "close";
-
-				this["Server"] = "SharpFlare";
-				this["Date"] = DateTime.Now.ToHttpDate();
-
-				if(Content != null)
-					this["Content-Length"] = Content.Length.ToString();
-
-				StringBuilder sb = new StringBuilder();
-				sb.Append($"HTTP/1.1 {StatusCode.code} {StatusCode.message}\n");
-				foreach(Tuple<string, string> tup in headers) // TODO: escape/encode these
-					sb.Append($"{tup.Item1}: {tup.Item2}\n");
-				sb.Append($"\n");
-
-				string s = sb.ToString();
-				int count = Encoding.UTF8.GetBytes(s, 0, s.Length, sendbuff, 0);
-				await stream.Write(sendbuff, 0, count);
-
-				if(Content != null)
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
 				{
-					while(true)
-					{
-						count = await Content.ReadAsync(sendbuff, 0, sendbuff.Length);
-						if(count == 0)
-							break;
-						await stream.Write(sendbuff, 0, count);
-					}
+					if (Finalized)
+						return;
+					Finalized = true;
 
-					Content.Dispose();
-					Content = null;
+					if (KeepAlive)
+						this["Connection"] = "keep-alive";
+					else
+						this["Connection"] = "close";
+
+					this["Server"] = "SharpFlare";
+					this["Date"] = DateTime.Now.ToHttpDate();
+
+					if (Content != null)
+						this["Content-Length"] = Content.Length.ToString();
+
+					StringBuilder sb = new StringBuilder();
+					sb.Append($"HTTP/1.1 {StatusCode.code} {StatusCode.message}\n");
+					foreach (Tuple<string, string> tup in headers) // TODO: escape/encode these
+						sb.Append($"{tup.Item1}: {tup.Item2}\n");
+					sb.Append($"\n");
+
+					string s = sb.ToString();
+					int count = Encoding.UTF8.GetBytes(s, 0, s.Length, sendbuff, 0);
+
+					await stream.Write(sendbuff, 0, count);
+
+					if (Content != null)
+					{
+						while (true)
+						{
+							count = await Content.ReadAsync(sendbuff, 0, sendbuff.Length).ConfigureAwait(false);
+							if (count == 0)
+								break;
+							await stream.Write(sendbuff, 0, count);
+						}
+
+						Content.Dispose();
+						Content = null;
+					}
 				}
 			}
 
@@ -254,21 +294,31 @@ namespace SharpFlare
 			{
 				set
 				{
-					headers.Add(new Tuple<string, string>(index, value));
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+					{
+						headers.Add(new Tuple<string, string>(index, value));
+					}
 				}
 			}
 
 			public void SetCookie(                   // Set-Cookie:
-				string name, string value,    // name=value;
-				DateTime? expires  = null,   // Expires= or Max-Age=;
-				string    domain    = null,   // Domain=;
-				string    path      = null,   // Path=;
-				bool      secure    = false,  // Secure;
-				bool      httponly  = false,  // HttpOnly
-				string    samesite  = null    // SameSite=
+				string name, string value,           // name=value;
+				DateTime? expires = null,            // Expires= or Max-Age=;
+				string domain = null,                // Domain=;
+				string path = null,                  // Path=;
+				bool secure = false,                 // Secure;
+				bool httponly = false,               // HttpOnly
+				string samesite = null               // SameSite=
 			)
 			{
-				throw new NotImplementedException();
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					throw new NotImplementedException();
+				}
 			}
 		}
 	}

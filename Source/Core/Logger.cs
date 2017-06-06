@@ -58,11 +58,21 @@ namespace SharpFlare
 			private static Sink sink = new Sink();
 			public static void Message(Level lvl, string msg)
 			{
-				sink.Consume(lvl, msg);
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					sink.Consume(lvl, msg);
+				}
 			}
 			public static void Message(Level lvl, string fmt, params object[] args)
 			{
-				sink.Consume(lvl, string.Format(fmt, args));
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					sink.Consume(lvl, string.Format(fmt, args));
+				}
 			}
 		}
 	}

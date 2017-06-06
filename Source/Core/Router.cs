@@ -53,12 +53,17 @@ namespace SharpFlare
 
 			public static Host GetHost(string domain)
 			{
-				Host h;
-				if (Hosts.TryGetValue(domain, out h))
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					Host h;
+					if (Hosts.TryGetValue(domain, out h))
+						return h;
+					h = new Host(domain);
+					Hosts[domain] = h;
 					return h;
-				h = new Host(domain);
-				Hosts[domain] = h;
-				return h;
+				}
 			}
 
 			Host(string domain)
@@ -69,59 +74,86 @@ namespace SharpFlare
 
 			public static Host MatchDomain(string domain)
 			{
-				// try static hosts
-				Host h;
-				if (Hosts.TryGetValue(domain, out h))
-					return h;
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					// try static hosts
+					Host h;
+					if (Hosts.TryGetValue(domain, out h))
+						return h;
 
-				return Host.Any;
+					return Host.Any;
+				}
 			}
 
 			public bool MatchesDomain(string domain)
 			{
-				if (Static)
-					return Domain == domain;
-				else
-					throw new NotImplementedException();
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					if (Static)
+						return Domain == domain;
+					else
+						throw new NotImplementedException();
+				}
 			}
 
 			static Dictionary<string, Route> StaticRoutes = new Dictionary<string, Route>();
 			static List<Route> RegexRoutes = new List<Route>();
 			public Route MatchRoute(string path)
 			{
-				Route ret;
-				if (StaticRoutes.TryGetValue(path, out ret))
-					return ret;
-				// try patterns
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					Route ret;
+					if (StaticRoutes.TryGetValue(path, out ret))
+						return ret;
+					// try patterns
 
-				return null;
+					return null;
+				}
 			}
 
 			public void Route(string path, PageGenerator page)
 			{
-				// assume static for now
-				Route ret;
-				if (StaticRoutes.TryGetValue(path, out ret))
-					throw new ArgumentException($"The route {path} has already been routed.");
-				StaticRoutes[path] = new Route(path, page);
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					// assume static for now
+					Route ret;
+					if (StaticRoutes.TryGetValue(path, out ret))
+						throw new ArgumentException($"The route {path} has already been routed.");
+					StaticRoutes[path] = new Route(path, page);
+				}
 			}
 		}
 
 		public static async Task<bool> HandleRequest(params object[] args)
 		{
-			Request req = (Request)args[0];
-			Response res = (Response)args[1];
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				Request req = (Request)args[0];
+				Response res = (Response)args[1];
 
-			Host host = Host.MatchDomain(req.Url.Host);
-			Route route = host.MatchRoute(req.Url.Path);
+				Host host = Host.MatchDomain(req.Url.Host);
+				Route route = host.MatchRoute(req.Url.Path);
 
-			if (route == null)
-				throw new HttpException($"{req.Url.Path} could not be found.", Status.NotFound);
+				if (route == null)
+					throw new HttpException($"{req.Url.Path} could not be found.", Status.NotFound);
+#if SHARPFLARE_PROFILE
+using (var _prof2 = SharpFlare.Profiler.EnterFunction("PageGenerator"))
+#endif
+				await route.Generator(req, res, new string[] { req.Url.Path });
+				await res.Finalize();
 
-			await route.Generator(req, res, new string[] { req.Url.Path });
-			await res.Finalize();
-
-			return false;
+				return false;
+			}
 		}
 	}
 }

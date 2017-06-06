@@ -10,6 +10,7 @@ using static SharpFlare.Router;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace SharpFlare
 {
@@ -46,8 +47,13 @@ namespace SharpFlare
 			"</html>\n";
 		public static async Task Lorem(Request req, Response res, string[] args)
 		{
-			res["Content-Type"] = "text/html";
-			res.Content = new MemoryStream(Encoding.UTF8.GetBytes(loremipsum));
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				res["Content-Type"] = "text/html";
+				res.Content = new MemoryStream(Encoding.UTF8.GetBytes(loremipsum));
+			}
 		}
 
 		public static async Task TestMissingFile(Request req, Response res, string[] args)
@@ -105,7 +111,6 @@ namespace SharpFlare
 
 			return writer.ToString();
 		}
-
 		static string TypeToCSharp(Type type, List<string> importedNamespaces)
 		{
 
@@ -143,17 +148,18 @@ namespace SharpFlare
 			res.Content = new MemoryStream(Encoding.UTF8.GetBytes(code));
 		}
 		#endregion
-
+		
 		[LoaderOptimization(LoaderOptimization.MultiDomain)]
 		static public int Main(string[] args)
 		{
 			System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+			//ThreadPool.SetMaxThreads(1000, 1000);
 			// load all the stuffs
 			// Assembly.LoadFrom(path);
 			// parse arguments
 			if (!CLI.Options.Parse(args))
 				return 1;
-
+			
 			// recover the source location to remove it later on
 			try { throw new Exception(); } catch(Exception ex)
 			{
@@ -185,7 +191,7 @@ namespace SharpFlare
 			Plugin plug = new Plugin("TestPlugin.dll");
 
 			Task.WaitAll(ipv4, ipv6);
-
+			
 			//while (true)
 			//	Task.Delay(-1).Wait();
 			

@@ -14,19 +14,29 @@ namespace SharpFlare
 
 			public Status(int c, string m)
 			{
-				code = c;
-				message = m;
-				Statuses[c] = this;
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					code = c;
+					message = m;
+					Statuses[c] = this;
+				}
 			}
 
 			public static implicit operator Status(int code)
 			{
-				Status ret;
-				if(Statuses.TryGetValue(code, out ret))
-					return ret;
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					Status ret;
+					if (Statuses.TryGetValue(code, out ret))
+						return ret;
 
-				Logger.GlobalLogger.Message(SharpFlare.Logger.Level.Warning, $"Unknown HTTP status code {code} used");
-				return new Status(code, "");
+					Logger.GlobalLogger.Message(SharpFlare.Logger.Level.Warning, $"Unknown HTTP status code {code} used");
+					return new Status(code, "");
+				}
 			}
 
 			public static Status

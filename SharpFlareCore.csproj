@@ -15,7 +15,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
+    <DefineConstants>DEBUG;SHARPFLARE_PROFILE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
@@ -31,6 +31,7 @@
     <ConsolePause>false</ConsolePause>
     <LangVersion>6</LangVersion>
     <WarningsAsErrors>CS4014</WarningsAsErrors>
+    <DefineConstants>SHARPFLARE_PROFILE</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -53,6 +54,7 @@
     <Compile Include="Source\Core\HttpListener.cs" />
     <Compile Include="Source\Core\Logger.cs" />
     <Compile Include="Source\Core\Plugins.cs" />
+    <Compile Include="Source\Core\Profiler.cs" />
     <Compile Include="Source\Core\RequestResponse.cs" />
     <Compile Include="Source\Core\Router.cs" />
     <Compile Include="Source\Core\TaskPool.cs" />
