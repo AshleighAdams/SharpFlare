@@ -95,7 +95,7 @@ namespace SharpFlare
 #endif
 			{
 				conn++;
-				bool should_profile = conn > 0;
+				bool should_profile = conn > 0 && false;
 				if (should_profile)
 					Profiler.Start("request.log");
 

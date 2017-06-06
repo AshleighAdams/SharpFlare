@@ -57,7 +57,7 @@ namespace SharpFlare
 			log = new StreamWriter(logname, false, new UTF8Encoding(false));
 			timer = new Stopwatch();
 
-			GC.Collect(3, GCCollectionMode.Forced, true, false);
+			GC.Collect(3, GCCollectionMode.Forced, true);
 			long kb = GC.GetTotalMemory(false) / 1000;
 			string callerinfo = $" \t :0";
 			log.Write($"{timer.Elapsed.TotalSeconds}\t{kb}\t+\t{callerinfo}\t\n");
@@ -73,7 +73,7 @@ namespace SharpFlare
 			timer.Stop();
 
 			if(CollectGarbage)
-				GC.Collect(3, GCCollectionMode.Forced, true, false);
+				GC.Collect(3, GCCollectionMode.Forced, true);
 			double kb = (double)GC.GetTotalMemory(false) / 1000.0;
 			string callerinfo = $" \t :0";
 			log.Write($"{timer.Elapsed.TotalSeconds}\t{kb}\t-\t{callerinfo}\t\n");
@@ -96,7 +96,7 @@ namespace SharpFlare
 			timer.Stop();
 			{
 				if(CollectGarbage)
-					GC.Collect(3, GCCollectionMode.Forced, true, false);
+					GC.Collect(3, GCCollectionMode.Forced, true);
 				double kb = (double)GC.GetTotalMemory(false) / 1000.0;
 
 				string strargs = "";

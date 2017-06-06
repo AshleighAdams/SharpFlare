@@ -265,8 +265,8 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 					StringBuilder sb = new StringBuilder();
 					sb.Append($"HTTP/1.1 {StatusCode.code} {StatusCode.message}\n");
 					foreach (Tuple<string, string> tup in headers) // TODO: escape/encode these
-						sb.Append($"{tup.Item1}: {tup.Item2}\n");
-					sb.Append($"\n");
+						sb.Append($"{tup.Item1}: {tup.Item2}\r\n");
+					sb.Append($"\r\n");
 
 					string s = sb.ToString();
 					int count = Encoding.UTF8.GetBytes(s, 0, s.Length, sendbuff, 0);
@@ -286,6 +286,8 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 						Content.Dispose();
 						Content = null;
 					}
+
+					await stream.Flush();
 				}
 			}
 

@@ -12,11 +12,14 @@ namespace SharpFlare
 	{
 		Socket sock;
 		public NetworkStream BaseStream;
+		public BufferedStream BufferedWriteStream;
 
 		public SocketStream(Socket s)
 		{
 			sock = s;
+			sock.NoDelay = false;
 			BaseStream = new NetworkStream(sock, true);
+			BufferedWriteStream = new BufferedStream(BaseStream);
 		}
 		~SocketStream()
 		{
@@ -220,8 +223,13 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 					}
 				}
 				else
-					await BaseStream.WriteAsync(buffer, pos, length).ConfigureAwait(false);
+					await BufferedWriteStream.WriteAsync(buffer, pos, length).ConfigureAwait(false);
 			}
+		}
+
+		public async Task Flush()
+		{
+			await this.BufferedWriteStream.FlushAsync().ConfigureAwait(false);
 		}
 
 		public async Task Write(string value)
