@@ -142,6 +142,10 @@ namespace SharpFlare
 									throw new HttpException("Request was not finalized.", Http.Status.InternalServerError);
 							}
 							///*
+							catch (SocketException)
+							{
+								break;
+							}
 							catch (NotImplementedException ex)
 							{
 								if (res.Finalized)
