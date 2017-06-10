@@ -188,7 +188,7 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 			Task ipv4 = HttpListener.ListenAsync(8080, IPAddress.Any);
 			Task ipv6 = HttpListener.ListenAsync(8080, IPAddress.IPv6Any);
 			
-			Plugin plug = new Plugin("TestPlugin.dll");
+			Plugin plug = new Plugin("TestSite.dll");
 
 			Task.WaitAll(ipv4, ipv6);
 			
