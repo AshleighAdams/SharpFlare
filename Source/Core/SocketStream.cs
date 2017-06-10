@@ -13,13 +13,23 @@ namespace SharpFlare
 		Socket sock;
 		public NetworkStream BaseStream;
 		public BufferedStream BufferedWriteStream;
+		
+		byte[] PeekBuffer;
+		int    PeekLength = 0;     // where the peek buffer has been filled to
+		int    PeekPos = 0; // where we read out from
+								//int        PeekBufferLen = 0;
 
 		public SocketStream(Socket s)
+			: this(s, new byte[4096])
+		{
+		}
+		public SocketStream(Socket s, byte[] peekbuffer)
 		{
 			sock = s;
 			sock.NoDelay = false;
 			BaseStream = new NetworkStream(sock, true);
 			BufferedWriteStream = new BufferedStream(BaseStream);
+			PeekBuffer = peekbuffer;
 		}
 		~SocketStream()
 		{
@@ -52,11 +62,7 @@ namespace SharpFlare
 		public bool Connected { get { return sock.Connected; } }
 		public bool DataAvailable { get { return BaseStream.DataAvailable; } }
 
-		const int  PeekBufferSize = 4096;
-		byte[]     PeekBuffer = new byte[PeekBufferSize];
-		int        PeekLength = 0;     // where the peek buffer has been filled to
-		int        PeekPos = 0; // where we read out from
-								//int        PeekBufferLen = 0;
+		
 
 		private async Task<int> Peek(int max_length) // returns the number of new bytes this peek
 		{
@@ -138,13 +144,13 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 using (var _prof = SharpFlare.Profiler.EnterFunction())
 #endif
 			{
-				if (max_length > PeekBufferSize)
+				if (max_length > PeekBuffer.Length)
 					throw new ArgumentOutOfRangeException("ReadUntil(): max_length is longer than peek buffer size");
-				else if (PeekPos + max_length > PeekBufferSize)
+				else if (PeekPos + max_length > PeekBuffer.Length)
 				{
 					PeekCompact(move: true);
 					Debug.Assert(PeekPos == 0);
-					Debug.Assert(max_length <= PeekBufferSize);
+					Debug.Assert(max_length <= PeekBuffer.Length);
 				}
 
 				// we don't have any lined up, fetch some more
@@ -223,13 +229,19 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 					}
 				}
 				else
+					//await BufferedWriteStream.WriteAsync(buffer, pos, length).ConfigureAwait(false);
 					await BufferedWriteStream.WriteAsync(buffer, pos, length).ConfigureAwait(false);
 			}
 		}
 
 		public async Task Flush()
 		{
-			await this.BufferedWriteStream.FlushAsync().ConfigureAwait(false);
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+			{
+				await this.BufferedWriteStream.FlushAsync().ConfigureAwait(false);
+			}
 		}
 
 		public async Task Write(string value)
