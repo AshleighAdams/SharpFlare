@@ -12,6 +12,7 @@ namespace SharpFlare
 	{
 		public class Http1Request : Request
 		{
+			public byte[] ReadBuffer = new byte[4096];
 			public class Http1RequestUrl : RequestUrl // http://user:pass@google.com/search?q=hi
 			{
 				public Http1RequestUrl() { }
@@ -30,7 +31,7 @@ namespace SharpFlare
 			// setup vars put outside to ease the garbage collector strain
 			LinkedList<string> _setup_path_stack = new LinkedList<string>();
 			static char[] _setup_split_space = new char[] { ' ' };
-			public void Setup(string[] lines, SocketStream stream, Socket sock)
+			public async Task Setup(SocketStream stream, Socket sock)
 			{
 #if SHARPFLARE_PROFILE
 			using (var _prof = SharpFlare.Profiler.EnterFunction())
@@ -43,56 +44,71 @@ namespace SharpFlare
 					this.IP = (sock.RemoteEndPoint as IPEndPoint).Address;
 					headers.Clear();
 
+					// read the data
+					int len = await stream.ReadHttpHeaders(ReadBuffer, 0, ReadBuffer.Length).ConfigureAwait(false);
 
-					if (lines.Length < 1)
-						throw new HttpException("No data present.", keepalive: false);
+					string path;
+					double version;
 
-					string[] split = lines[0].Split(_setup_split_space, 3);
-
-					if (split.Length != 3)
-						throw new HttpException("Invalid request line.", keepalive: false);
-
-
-					string lastheader = ""; // for continuations
-					for (int i = 1; i < lines.Length; i++)
+					using (var memreadstr = new MemoryStream(ReadBuffer))  // Encoding.UTF8.GetString(ReadBuffer, 0, len).Split('\n');
+					using (var linereader = new StreamReader(memreadstr))
 					{
-						string line = lines[i];
-						if (string.IsNullOrWhiteSpace(line))
-							break;
+						if(linereader.EndOfStream)
+							throw new HttpException("No data present.", status: Status.BadRequest, keepalive: false);
+						//if (lines.Length < 1)
+						//	throw new HttpException("No data present.", keepalive: false);
 
-						if (line[0] == ' ' || line[0] == '\t')
+						
 						{
-							if (string.IsNullOrEmpty(lastheader))
-								throw new HttpException("No previous header to append to.", status: Http.Status.BadRequest, keepalive: false);
-							this[lastheader] += ' ' + line.TrimEnd();
+							string[] split = linereader.ReadLine().Split(_setup_split_space, 3);
+							if (split.Length != 3)
+								throw new HttpException("Invalid request line.", status: Status.BadRequest, keepalive: false);
+							this.Method = split[0];
+							path = split[1];
+							this.Protocol = split[2];
+							if (!double.TryParse(split[2].Replace("HTTP/", ""), out version))
+								throw new HttpException("Invalid version string.", Status.BadRequest);
 						}
-						else
+
+						string lastheader = ""; // for continuations
+						int i = 0;
+						while(!linereader.EndOfStream)
 						{
-							int index = line.IndexOf(':');
+							string line = linereader.ReadLine();
+							if (string.IsNullOrEmpty(line))
+								break;
 
-							if (index == 0)
-								throw new HttpException($"The {i}{Util.Nth(i)} header key is empty.", status: Http.Status.BadRequest, keepalive: false);
-							else if (index < 0)
-								throw new HttpException($"The {i}{Util.Nth(i)} header value is non existant.", status: Http.Status.BadRequest, keepalive: false);
+							if (line[0] == ' ' || line[0] == '\t')
+							{
+								if (string.IsNullOrEmpty(lastheader))
+									throw new HttpException("No previous header to append to.", status: Http.Status.BadRequest, keepalive: false);
+								this[lastheader] += ' ' + line.TrimEnd();
+							}
+							else
+							{
+								i++;
+								int index = line.IndexOf(':');
 
-							string key = line.Substring(0, index);
-							string value = line.Substring(index + 1).Trim();
+								if (index == 0)
+									throw new HttpException($"The {i}{Util.Nth(i)} header key is empty.", status: Http.Status.BadRequest, keepalive: false);
+								else if (index < 0)
+									throw new HttpException($"The {i}{Util.Nth(i)} header value is non existant.", status: Http.Status.BadRequest, keepalive: false);
 
-							headers[key] = value;
-							lastheader = key;
+								string key = line.Substring(0, index);
+								string value = line.Substring(index + 1).Trim();
+
+								headers[key] = value;
+								lastheader = key;
+							}
 						}
 					}
-
-					string path = split[1];
+					
 					string host = this["Host"];
-					double version;
-					if (!double.TryParse(split[2].Replace("HTTP/", ""), out version))
-						throw new HttpException("Invalid version string.", Status.BadRequest);
 
-					string pathbit = split[1];
 					if (version >= 1.2 && path[0] != '/')
 					{
 						// extract the host, port, and scheme
+						throw new NotImplementedException();
 					}
 
 					{ // parse the url
@@ -111,43 +127,40 @@ namespace SharpFlare
 
 						this._Url.Host = host;
 
-						int query = pathbit.IndexOf('?');
+						int query = path.IndexOf('?');
 						if (query != -1)
 						{
-							this._Url.Query = pathbit.Substring(query + 1);
-							pathbit = pathbit.Substring(0, query);
+							this._Url.Query = path.Substring(query + 1);
+							path = path.Substring(0, query);
 						}
 
-						pathbit = Unescape.Url(pathbit).Replace('\\', '/');
+						path = Unescape.Url(path).Replace('\\', '/');
 
 
 						// canonicalize the path /a/b/c/../z -> /a/b/z
 						int i = 0;
-						while (i < pathbit.Length)
+						while (i < path.Length)
 						{
 							int start = i;
 							int end;
-							for (end = i; end < pathbit.Length && pathbit[end] != '/'; end++)
+							for (end = i; end < path.Length && path[end] != '/'; end++)
 								;
 							i = end + 1;
-							int len = end - start; // either it is a slash, or it went out of bounds by 1 anyway
+							int bitlen = end - start; // either it is a slash, or it went out of bounds by 1 anyway
 
-							if (len == 0) // is it an empty node? continue
+							if (bitlen == 0) // is it an empty node? continue
 								continue;
-							else if (len == 1 && pathbit[start] == '.')
+							else if (bitlen == 1 && path[start] == '.')
 								continue;
-							else if (len == 2 && pathbit[start] == '.' && pathbit[start + 1] == '.')
+							else if (bitlen == 2 && path[start] == '.' && path[start + 1] == '.')
 								_setup_path_stack.RemoveLast();
 							else
-								_setup_path_stack.AddLast(pathbit.Substring(start, len));
+								_setup_path_stack.AddLast(path.Substring(start, bitlen));
 						}
-						this._Url.Path = pathbit = $"/{string.Join("/", _setup_path_stack)}";
+						this._Url.Path = path = $"/{string.Join("/", _setup_path_stack)}";
 						_setup_path_stack.Clear();
 					}
-
-					this.Method = split[0];
-					this.Protocol = split[2];
-
+					
 					long content_length = 0;
 					string strcontent_length = this["Content-Length"];
 					if (strcontent_length != "")
@@ -271,7 +284,7 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 					string s = sb.ToString();
 					int count = Encoding.UTF8.GetBytes(s, 0, s.Length, sendbuff, 0);
 
-					await stream.Write(sendbuff, 0, count);
+					await stream.Write(sendbuff, 0, count).ConfigureAwait(false);
 
 					if (Content != null)
 					{
@@ -280,14 +293,14 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 							count = await Content.ReadAsync(sendbuff, 0, sendbuff.Length).ConfigureAwait(false);
 							if (count == 0)
 								break;
-							await stream.Write(sendbuff, 0, count);
+							await stream.Write(sendbuff, 0, count).ConfigureAwait(false);
 						}
 
 						Content.Dispose();
 						Content = null;
 					}
 
-					await stream.Flush();
+					await stream.Flush().ConfigureAwait(false);
 				}
 			}
 

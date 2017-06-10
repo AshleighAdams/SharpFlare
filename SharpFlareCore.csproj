@@ -31,7 +31,8 @@
     <ConsolePause>false</ConsolePause>
     <LangVersion>6</LangVersion>
     <WarningsAsErrors>CS4014</WarningsAsErrors>
-    <DefineConstants>SHARPFLARE_PROFILE</DefineConstants>
+    <DefineConstants>
+    </DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>true</SignAssembly>
@@ -53,6 +54,7 @@
     <Compile Include="Source\Core\Hook.cs" />
     <Compile Include="Source\Core\HttpListener.cs" />
     <Compile Include="Source\Core\Logger.cs" />
+    <Compile Include="Source\Core\ObjectPool.cs" />
     <Compile Include="Source\Core\Plugins.cs" />
     <Compile Include="Source\Core\Profiler.cs" />
     <Compile Include="Source\Core\RequestResponse.cs" />
