@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <ApplicationIcon />
+    <StartupObject />
+	<EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+	<RootNamespace>SharpFlare</RootNamespace>
+	<AssemblyName>SharpFlareCore</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>bin\Debug\</OutputPath>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>bin\Release\</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Source\Core\CLI.cs" Link="CLI.cs" />
+    <Compile Include="..\..\Source\Core\DefaultErrorHandler.cs" Link="DefaultErrorHandler.cs" />
+    <Compile Include="..\..\Source\Core\DefaultErrorHandlerFiles.cs" Link="DefaultErrorHandlerFiles.cs" />
+    <Compile Include="..\..\Source\Core\Hook.cs" Link="Hook.cs" />
+    <Compile Include="..\..\Source\Core\HttpListener.cs" Link="HttpListener.cs" />
+    <Compile Include="..\..\Source\Core\HttpRequestResponse.cs" Link="HttpRequestResponse.cs" />
+    <Compile Include="..\..\Source\Core\HttpStatus.cs" Link="HttpStatus.cs" />
+    <Compile Include="..\..\Source\Core\Logger.cs" Link="Logger.cs" />
+    <Compile Include="..\..\Source\Core\ObjectPool.cs" Link="ObjectPool.cs" />
+    <Compile Include="..\..\Source\Core\Plugin.cs" Link="Plugin.cs" />
+    <Compile Include="..\..\Source\Core\Profiler.cs" Link="Profiler.cs" />
+    <Compile Include="..\..\Source\Core\RequestResponse.cs" Link="RequestResponse.cs" />
+    <Compile Include="..\..\Source\Core\Router.cs" Link="Router.cs" />
+    <Compile Include="..\..\Source\Core\SocketStream.cs" Link="SocketStream.cs" />
+    <Compile Include="..\..\Source\Core\TaskPool.cs" Link="TaskPool.cs" />
+    <Compile Include="..\..\Source\Core\Util.cs" Link="Util.cs" />
+  </ItemGroup>
+  
+</Project>
