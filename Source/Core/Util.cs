@@ -404,20 +404,18 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 			}
 		}
 	}
-	
+
 
 	/* https://stackoverflow.com/questions/719020/is-there-an-async-version-of-directoryinfo-getfiles-directory-getdirectories-i  */
 	// if the debugger breaks on these below, that is because Just My Code is enabled, stopping Task.Run handling the exception
 	// Maybe: Figure out how to use [DebuggerNonUserCode] with lambadas
-	
+
 	public static class DirectoryAsync
 	{
 		public static Task<System.IO.DirectoryInfo> GetParentAsync(String path)
 		{ return Task.Run(() => { return Directory.GetParent(path); }); }
 		public static Task<DirectoryInfo> CreateDirectoryAsync(String path)
 		{ return Task.Run(() => { return Directory.CreateDirectory(path); }); }
-		public static Task<DirectoryInfo> CreateDirectoryAsync(String path, System.Security.AccessControl.DirectorySecurity directorySecurity)
-		{ return Task.Run(() => { return Directory.CreateDirectory(path, directorySecurity); }); }
 		public static Task<Boolean> ExistsAsync(String path)
 		{ return Task.Run(() => { return Directory.Exists(path); }); }
 		public static Task SetCreationTimeAsync(String path, DateTime creationTime)
@@ -444,12 +442,6 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		{ return Task.Run(() => { return Directory.GetLastAccessTime(path); }); }
 		public static Task<DateTime> GetLastAccessTimeUtcAsync(String path)
 		{ return Task.Run(() => { return Directory.GetLastAccessTimeUtc(path); }); }
-		public static Task<System.Security.AccessControl.DirectorySecurity> GetAccessControlAsync(String path)
-		{ return Task.Run(() => { return Directory.GetAccessControl(path); }); }
-		public static Task<System.Security.AccessControl.DirectorySecurity> GetAccessControlAsync(String path, System.Security.AccessControl.AccessControlSections includeSections)
-		{ return Task.Run(() => { return Directory.GetAccessControl(path, includeSections); }); }
-		public static Task SetAccessControlAsync(String path, System.Security.AccessControl.DirectorySecurity directorySecurity)
-		{ return Task.Run(() => { Directory.SetAccessControl(path, directorySecurity); }); }
 		public static Task<String[]> GetFilesAsync(String path)
 		{ return Task.Run(() => { return Directory.GetFiles(path); }); }
 		public static Task<String[]> GetFilesAsync(String path, String searchPattern)
@@ -486,8 +478,6 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		{ return Task.Run(() => { return Directory.EnumerateFileSystemEntries(path, searchPattern); }); }
 		public static Task<IEnumerable<String>> EnumerateFileSystemEntriesAsync(String path, String searchPattern, SearchOption searchOption)
 		{ return Task.Run(() => { return Directory.EnumerateFileSystemEntries(path, searchPattern, searchOption); }); }
-		public static Task<String[]> GetLogicalDrivesAsync()
-		{ return Task.Run(() => { return Directory.GetLogicalDrives(); }); }
 		public static Task<String> GetDirectoryRootAsync(String path)
 		{ return Task.Run(() => { return Directory.GetDirectoryRoot(path); }); }
 		public static Task<String> GetCurrentDirectoryAsync()
@@ -500,6 +490,18 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		{ return Task.Run(() => { Directory.Delete(path); }); }
 		public static Task DeleteAsync(String path, Boolean recursive)
 		{ return Task.Run(() => { Directory.Delete(path, recursive); }); }
+#if NET_STANDARD
+		public static Task<DirectoryInfo> CreateDirectoryAsync(String path, System.Security.AccessControl.DirectorySecurity directorySecurity)
+		{ return Task.Run(() => { return Directory.CreateDirectory(path, directorySecurity); }); }
+		public static Task<System.Security.AccessControl.DirectorySecurity> GetAccessControlAsync(String path)
+		{ return Task.Run(() => { return Directory.GetAccessControl(path); }); }
+		public static Task<System.Security.AccessControl.DirectorySecurity> GetAccessControlAsync(String path, System.Security.AccessControl.AccessControlSections includeSections)
+		{ return Task.Run(() => { return Directory.GetAccessControl(path, includeSections); }); }
+		public static Task SetAccessControlAsync(String path, System.Security.AccessControl.DirectorySecurity directorySecurity)
+		{ return Task.Run(() => { Directory.SetAccessControl(path, directorySecurity); }); }
+		public static Task<String[]> GetLogicalDrivesAsync()
+		{ return Task.Run(() => { return Directory.GetLogicalDrives(); }); }
+#endif
 	}
 	public static class FileAsync
 	{
@@ -519,14 +521,8 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		{ return Task.Run(() => { return File.Create(path, bufferSize); }); }
 		public static Task<FileStream> CreateAsync(String path, Int32 bufferSize, FileOptions options)
 		{ return Task.Run(() => { return File.Create(path, bufferSize, options); }); }
-		public static Task<FileStream> CreateAsync(String path, Int32 bufferSize, FileOptions options, System.Security.AccessControl.FileSecurity fileSecurity)
-		{ return Task.Run(() => { return File.Create(path, bufferSize, options, fileSecurity); }); }
 		public static Task DeleteAsync(String path)
 		{ return Task.Run(() => { File.Delete(path); }); }
-		public static Task DecryptAsync(String path)
-		{ return Task.Run(() => { File.Decrypt(path); }); }
-		public static Task EncryptAsync(String path)
-		{ return Task.Run(() => { File.Encrypt(path); }); }
 		public static Task<Boolean> ExistsAsync(String path)
 		{ return Task.Run(() => { return File.Exists(path); }); }
 		public static Task<FileStream> OpenAsync(String path, FileMode mode)
@@ -563,12 +559,6 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		{ return Task.Run(() => { return File.GetAttributes(path); }); }
 		public static Task SetAttributesAsync(String path, FileAttributes fileAttributes)
 		{ return Task.Run(() => { File.SetAttributes(path, fileAttributes); }); }
-		public static Task<System.Security.AccessControl.FileSecurity> GetAccessControlAsync(String path)
-		{ return Task.Run(() => { return File.GetAccessControl(path); }); }
-		public static Task<System.Security.AccessControl.FileSecurity> GetAccessControlAsync(String path, System.Security.AccessControl.AccessControlSections includeSections)
-		{ return Task.Run(() => { return File.GetAccessControl(path, includeSections); }); }
-		public static Task SetAccessControlAsync(String path, System.Security.AccessControl.FileSecurity fileSecurity)
-		{ return Task.Run(() => { File.SetAccessControl(path, fileSecurity); }); }
 		public static Task<FileStream> OpenReadAsync(String path)
 		{ return Task.Run(() => { return File.OpenRead(path); }); }
 		public static Task<FileStream> OpenWriteAsync(String path)
@@ -611,10 +601,24 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		{ return Task.Run(() => { File.AppendAllLines(path, contents, encoding); }); }
 		public static Task MoveAsync(String sourceFileName, String destFileName)
 		{ return Task.Run(() => { File.Move(sourceFileName, destFileName); }); }
+#if NET_STANDARD
+		public static Task<FileStream> CreateAsync(String path, Int32 bufferSize, FileOptions options, System.Security.AccessControl.FileSecurity fileSecurity)
+		{ return Task.Run(() => { return File.Create(path, bufferSize, options, fileSecurity); }); }
+		public static Task DecryptAsync(String path)
+		{ return Task.Run(() => { File.Decrypt(path); }); }
+		public static Task EncryptAsync(String path)
+		{ return Task.Run(() => { File.Encrypt(path); }); }
+		public static Task<System.Security.AccessControl.FileSecurity> GetAccessControlAsync(String path)
+		{ return Task.Run(() => { return File.GetAccessControl(path); }); }
+		public static Task<System.Security.AccessControl.FileSecurity> GetAccessControlAsync(String path, System.Security.AccessControl.AccessControlSections includeSections)
+		{ return Task.Run(() => { return File.GetAccessControl(path, includeSections); }); }
+		public static Task SetAccessControlAsync(String path, System.Security.AccessControl.FileSecurity fileSecurity)
+		{ return Task.Run(() => { File.SetAccessControl(path, fileSecurity); }); }
 		public static Task ReplaceAsync(String sourceFileName, String destinationFileName, String destinationBackupFileName)
 		{ return Task.Run(() => { File.Replace(sourceFileName, destinationFileName, destinationBackupFileName); }); }
 		public static Task ReplaceAsync(String sourceFileName, String destinationFileName, String destinationBackupFileName, Boolean ignoreMetadataErrors)
 		{ return Task.Run(() => { File.Replace(sourceFileName, destinationFileName, destinationBackupFileName, ignoreMetadataErrors); }); }
+#endif
 	}
 }
 
