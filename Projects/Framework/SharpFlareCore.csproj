@@ -15,7 +15,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;SHARPFLARE_PROFILE</DefineConstants>
+    <DefineConstants>DEBUG;NET_STANDARD</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
@@ -31,14 +31,14 @@
     <ConsolePause>false</ConsolePause>
     <LangVersion>6</LangVersion>
     <WarningsAsErrors>CS4014</WarningsAsErrors>
-    <DefineConstants>
-    </DefineConstants>
+    <DefineConstants>NET_STANDARD</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>SharpFlareKey.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -48,24 +48,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="Source\Core\CLI.cs" />
-    <Compile Include="Source\Core\DefaultErrorHandlerFiles.cs" />
-    <Compile Include="Source\Core\DefaultErrorHandler.cs" />
-    <Compile Include="Source\Core\Hook.cs" />
-    <Compile Include="Source\Core\HttpListener.cs" />
-    <Compile Include="Source\Core\Logger.cs" />
-    <Compile Include="Source\Core\ObjectPool.cs" />
-    <Compile Include="Source\Core\Plugins.cs" />
-    <Compile Include="Source\Core\Profiler.cs" />
-    <Compile Include="Source\Core\RequestResponse.cs" />
-    <Compile Include="Source\Core\Router.cs" />
-    <Compile Include="Source\Core\TaskPool.cs" />
-    <Compile Include="Source\Core\SocketStream.cs" />
-    <Compile Include="Source\Core\HttpRequestResponse.cs" />
-    <Compile Include="Source\Core\HttpStatus.cs" />
-    <Compile Include="Source\Core\Util.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="SharpFlareKey.snk" />
+    <Parent Include="..\..\Source\Core\**\*.cs" />
+    <Compile Include="@(Parent)">
+      <Link>..\..\Source\Core\%(Parent.Filename).cs</Link>
+    </Compile>
   </ItemGroup>
 </Project>

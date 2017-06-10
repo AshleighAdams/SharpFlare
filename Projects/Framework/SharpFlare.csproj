@@ -34,7 +34,10 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Compile Include="Source\Main\Program.cs" />
+    <Parent Include="..\..\Source\Main\**\*.cs"/>
+    <Compile Include="@(Parent)">
+      <Link>..\..\Source\Main\%(Parent.Filename).cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="SharpFlareCore.csproj">
