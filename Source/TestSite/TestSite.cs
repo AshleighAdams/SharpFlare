@@ -1,11 +1,14 @@
 using SharpFlare;
 using SharpFlare.Http;
+using System;
 using System.IO;
+using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 //[Host("*://*.blah.com/*")]
-public class TestPlugin
+public class Test
 {
 	/* Warnings?
 	   If you do not need an async call (your page generates synchrnously), the compiler will
@@ -24,6 +27,20 @@ public class TestPlugin
 		res.Content = new MemoryStream(Encoding.UTF8.GetBytes("Plugin says hello"));
 	}
 
+	[Route("/test/([a-zA-Z0-9 ]+)")]
+	public async Task TestPattern(Request req, Response res, string[] args)
+	{
+		StringBuilder sb = new StringBuilder();
+
+		sb.Append("<html>\n");
+		foreach(string arg in args)
+			sb.Append($"<div>{arg}</div>\n");
+		sb.Append("</html>\n");
+
+		res["Content-Type"] = "text/html";
+		res.Content = new MemoryStream(Encoding.UTF8.GetBytes(sb.ToString()));
+	}
+
 	public void Load()
 	{
 		SharpFlare.Logger.GlobalLogger.Message(SharpFlare.Logger.Level.Normal, "Hello plugin");
@@ -33,4 +50,25 @@ public class TestPlugin
 	{
 		SharpFlare.Logger.GlobalLogger.Message(SharpFlare.Logger.Level.Normal, "Bye plugin");
 	}
+
+	// very simple proxy, doesn't handle anything other than GET, and doesn't rewrite urls
+	[Route(@"/highlight/(.+)")]
+	public async Task TestHighlight(Request reqds, Response resds, string[] args)
+	{
+		HttpWebRequest req = (HttpWebRequest)WebRequest.Create(args[1]);
+		
+		req.UserAgent = reqds["User-Agent"];
+		WebResponse res = await req.GetResponseAsync();
+
+		using (var x = new StreamReader(res.GetResponseStream()))
+		{
+			string str = await x.ReadToEndAsync();
+
+			str = Regex.Replace(str, "", "");
+
+			resds["Content-Type"] = res.ContentType;
+			resds.Content = new MemoryStream(Encoding.UTF8.GetBytes(str));
+		}
+	}
+
 }

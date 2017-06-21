@@ -8,6 +8,7 @@ using System.IO;
 using SharpFlare.Http;
 
 using PageGenerator = System.Func<SharpFlare.Http.Request, SharpFlare.Http.Response, string[], System.Threading.Tasks.Task>;
+using System.Text.RegularExpressions;
 
 namespace SharpFlare
 {
@@ -34,11 +35,18 @@ namespace SharpFlare
 			public readonly string Path;
 			public readonly bool Static;
 			public readonly PageGenerator Generator;
+			public readonly Regex Pattern;
 
 			public Route(string path, PageGenerator gen)
 			{
-				Static = true; // TODO:
+				Static = true;
 				Path = path;
+				Generator = gen;
+			}
+			public Route(Regex pattern, PageGenerator gen)
+			{
+				Static = false;
+				Pattern = pattern;
 				Generator = gen;
 			}
 		}
@@ -102,7 +110,7 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 
 			static Dictionary<string, Route> StaticRoutes = new Dictionary<string, Route>();
 			static List<Route> RegexRoutes = new List<Route>();
-			public Route MatchRoute(string path)
+			public Route MatchRoute(string path, out string[] args)
 			{
 #if SHARPFLARE_PROFILE
 using (var _prof = SharpFlare.Profiler.EnterFunction())
@@ -110,9 +118,24 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 				{
 					Route ret;
 					if (StaticRoutes.TryGetValue(path, out ret))
+					{
+						args = new string[] { path };
 						return ret;
+					}
 					// try patterns
+					// todo: handle collisions
+					foreach (Route r in RegexRoutes)
+					{
+						var m = r.Pattern.Match(path);
+						if (!m.Success)
+							continue;
+						args = new string[m.Groups.Count];
+						for (int i = 0; i < m.Groups.Count; i++)
+							args[i] = m.Groups[i].Value;
+						return r;
+					}
 
+					args = null;
 					return null;
 				}
 			}
@@ -123,11 +146,18 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 using (var _prof = SharpFlare.Profiler.EnterFunction())
 #endif
 				{
-					// assume static for now
-					Route ret;
-					if (StaticRoutes.TryGetValue(path, out ret))
-						throw new ArgumentException($"The route {path} has already been routed.");
-					StaticRoutes[path] = new Route(path, page);
+					if (path.Contains('\\') || path.Contains('[') || path.Contains('('))
+					{
+						Regex rx = new Regex(path, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.CultureInvariant);
+						RegexRoutes.Add(new Route(rx, page));
+					}
+					else
+					{
+						Route ret;
+						if (StaticRoutes.TryGetValue(path, out ret))
+							throw new ArgumentException($"The route {path} has already been routed.");
+						StaticRoutes[path] = new Route(path, page);
+					}
 				}
 			}
 		}
@@ -141,15 +171,17 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 				Request req = (Request)args[0];
 				Response res = (Response)args[1];
 
+				string[] page_args;
+
 				Host host = Host.MatchDomain(req.Url.Host);
-				Route route = host.MatchRoute(req.Url.Path);
+				Route route = host.MatchRoute(req.Url.Path, out page_args);
 
 				if (route == null)
 					throw new HttpException($"{req.Url.Path} could not be found.", Status.NotFound);
 #if SHARPFLARE_PROFILE
 using (var _prof2 = SharpFlare.Profiler.EnterFunction("PageGenerator"))
 #endif
-				await route.Generator(req, res, new string[] { req.Url.Path });
+				await route.Generator(req, res, page_args);
 				await res.Finalize();
 
 				return false;
