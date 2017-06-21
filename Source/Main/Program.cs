@@ -11,6 +11,7 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Collections.Generic;
 using System.Threading;
+using System.Reflection;
 
 namespace SharpFlare
 {
@@ -59,7 +60,7 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		public static async Task TestMissingFile(Request req, Response res, string[] args)
 		{
 			res["Content-Type"] = "text/html";
-			res.Content = new FileStream("idontexist.html", FileMode.Open);
+			res.Content = await FileAsync.OpenReadAsync("idontexist.html");
 		}
 
 		#region ASYNCGEN
@@ -153,10 +154,12 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		static public int Main(string[] args)
 		{
 			System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-			//ThreadPool.SetMaxThreads(1000, 1000);
-			// load all the stuffs
-			// Assembly.LoadFrom(path);
-			// parse arguments
+			var fullpath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/";
+
+			List<UnrestrictedPlugin> plugins = new List<UnrestrictedPlugin>();
+			foreach (string dir in Directory.GetFiles("Plugins/", "Plugin.*.dll", SearchOption.AllDirectories))
+				plugins.Add(new UnrestrictedPlugin(fullpath + dir));
+
 			if (!CLI.Options.Parse(args))
 				return 1;
 			
@@ -185,15 +188,15 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 			Host.Any.Route("/async", GenerateAsyncMethods);
 			DefaultErrorHandler.Setup();
 
-			Task ipv4 = HttpListener.ListenAsync(8080, IPAddress.Any);
-			Task ipv6 = HttpListener.ListenAsync(8080, IPAddress.IPv6Any);
-			
-			Plugin plug = new Plugin("TestSite.dll");
 
-			Task.WaitAll(ipv4, ipv6);
+			List<SitePlugin> sites = new List<SitePlugin>();
+			foreach (string dir in Directory.GetFiles("Sites/", "Site.*.dll", SearchOption.AllDirectories))
+				sites.Add(new SitePlugin(fullpath + dir));
 			
-			//while (true)
-			//	Task.Delay(-1).Wait();
+			//Task.WaitAll(ipv4, ipv6);
+			
+			while (true)
+				Task.Delay(-1).Wait();
 			
 			return 0;
 		}

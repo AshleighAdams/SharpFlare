@@ -14,21 +14,20 @@ using System.Security;
 using System.Security.Permissions;
 using System.Security.Policy;
 using System.Runtime.Remoting;
-using System.Runtime.InteropServices;
 #endif
 
-#if NET_STANDARD
+#if NET_STANDARD_NOPE
 
 //https://msdn.microsoft.com/en-us/library/bb763046(v=vs.110).aspx
-//[assembly: SecurityRules(SecurityRuleSet.Level1)]
+[assembly: SecurityRules(SecurityRuleSet.Level1)]
 [assembly: AllowPartiallyTrustedCallers]
 
 namespace SharpFlare
 {
-	public class BasePlugin
+	public class BaseSitePlugin
 	{
 		string Name;
-		public BasePlugin(string name) { Name = name; }
+		public BaseSitePlugin(string name) { Name = name; }
 		public virtual void Load() { }
 		public virtual void Unload() { }
 	}
@@ -44,21 +43,22 @@ namespace SharpFlare
 
 		public Assembly Load(string path)
 		{
-			return Assembly.LoadFile(path);
-			/*
 			try
 			{
+				return Assembly.LoadFile(path);
 			}
 			catch (SecurityException ex)
 			{
 				(new PermissionSet(PermissionState.Unrestricted)).Assert();
 				Console.WriteLine(ex.ToString());
 				CodeAccessPermission.RevertAssert();
-			}*/
+				throw;
+			}
 		}
 	}
 
-	public class Plugin
+	//[Serializable]
+	public class SitePlugin
 	{
 		string FullPath;
 		string basepath;
@@ -69,18 +69,19 @@ namespace SharpFlare
 		object RemoteObject;
 
 		[SecurityCritical/*(SecurityCriticalScope.Everything)*/]
-		public Plugin(string path)
+		public SitePlugin(string path)
 		{
-			basepath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-			
-			FullPath = Path.GetFullPath(path);
-			string dir = Path.GetDirectoryName(FullPath);
+			path = path.Replace('\\', '/');
+			FullPath = path;
+			string dir = Path.GetDirectoryName(FullPath).Replace('\\', '/');
+
 
 			Setup = new AppDomainSetup()
 			{
 				ApplicationBase = dir,
 				PrivateBinPath = dir,
-				PrivateBinPathProbe = dir
+				PrivateBinPathProbe = dir,
+				ShadowCopyFiles = "true"
 			};
 
 			Permissions = new PermissionSet(PermissionState.None);
@@ -100,15 +101,39 @@ namespace SharpFlare
 			StrongName[] list = new StrongName[0];
 			Sandbox = AppDomain.CreateDomain(FullPath, null, Setup, Permissions, /*pluginhost*/ list);
 			
+
+			Sandbox.Load(Assembly.GetExecutingAssembly().FullName);
 			//Sandbox.AssemblyResolve += Sandbox_AssemblyResolve;
 
 			//Remote = (PluginHost)Sandbox.CreateInstanceFromAndUnwrap(typeof(PluginHost).Assembly.ManifestModule.FullyQualifiedName, typeof(PluginHost).FullName);
 
 			ObjectHandle handle = Activator.CreateInstanceFrom(Sandbox, typeof(PluginHost).Assembly.ManifestModule.FullyQualifiedName, typeof(PluginHost).FullName);
 			Remote = (PluginHost)handle.Unwrap();
-			Assembly asm = Remote.Load(FullPath);
 
-			var t = asm.GetType("TestPlugin");
+			Assembly asm;
+			{
+				// copy ourselves to the dir path so they can load us:
+				//string to = dir + "/" + Path.GetFileName(Assembly.GetExecutingAssembly().Location);
+				
+				try
+				{
+					//File.Copy(Assembly.GetExecutingAssembly().Location, to, true);
+					//do
+					//	System.Threading.Thread.Sleep(100);
+					//while (!File.Exists(to));
+					// FullPath.Replace("/", "\\")
+
+					asm = Remote.Load(path);
+					//asm = Remote.Load(FullPath.Replace("/", "\\"));
+				}
+				finally
+				{
+					//File.Delete(to);
+				}
+			}
+
+			var name = Path.GetFileNameWithoutExtension(path).Substring("Site.".Length).Replace(".", " ").Replace(" ", "_");
+			var t = asm.GetType(name);
 			RemoteObject = Activator.CreateInstance(t);
 			var methods =
 				from m in t.GetMethods()
@@ -183,23 +208,16 @@ namespace SharpFlare
 #else
 namespace SharpFlare
 {
-	public class BasePlugin
-	{
-		string Name;
-		public BasePlugin(string name) { Name = name; }
-		public virtual void Load() { }
-		public virtual void Unload() { }
-	}
-	public class Plugin
+	public class SitePlugin
 	{
 		object RemoteObject;
 
-		public Plugin(string path)
+		public SitePlugin(string path)
 		{
-			string fullpath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/" + path;
-			Assembly asm = Assembly.LoadFile(fullpath);
+			Assembly asm = Assembly.LoadFile(path);
 
-			var t = asm.GetType("TestSite");
+			var name = Path.GetFileNameWithoutExtension(path).Substring("Site.".Length).Replace(".", " ").Replace(" ", "_");
+			var t = asm.GetType(name);
 			RemoteObject = Activator.CreateInstance(t);
 
 			var methods =
@@ -214,7 +232,7 @@ namespace SharpFlare
 				ParameterInfo[] args = method.GetParameters();
 
 				if (method.ReturnType != typeof(Task) || args.Length != 3)
-					throw new InvalidFunctionSignatureException($"Plugin route has invalid function signature: {t.Name}.{method.Name}");
+					throw new InvalidFunctionSignatureException($"SitePlugin route has invalid function signature: {t.Name}.{method.Name}");
 
 				if (!CLI.GlobalOptions.DebugBindDelegate)
 				{

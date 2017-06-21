@@ -52,6 +52,7 @@ namespace SharpFlare
 			long ContentLength { get; }
 			IPAddress IP { get; }
 			string this[string index] { get; }
+			bool HeaderPresent(string index);
 			string GetCookie(string name);
 		}
 
@@ -67,6 +68,7 @@ namespace SharpFlare
 		{
 			Status StatusCode { set; }
 			Task Finalize();
+			DateTime? LastModified { set; } // will try to pull from the stream if it's supported too
 			Stream Content { set; }
 			// set Content-Type
 			string this[string index] { set; }

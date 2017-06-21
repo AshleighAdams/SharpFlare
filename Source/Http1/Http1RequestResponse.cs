@@ -5,6 +5,8 @@ using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 
 namespace SharpFlare
 {
@@ -63,7 +65,7 @@ namespace SharpFlare
 							string[] split = linereader.ReadLine().Split(_setup_split_space, 3);
 							if (split.Length != 3)
 								throw new HttpException("Invalid request line.", status: Status.BadRequest, keepalive: false);
-							this.Method = split[0];
+							this.Method = split[0].ToUpperInvariant();
 							path = split[1];
 							this.Protocol = split[2];
 							if (!double.TryParse(split[2].Replace("HTTP/", ""), out version))
@@ -94,7 +96,7 @@ namespace SharpFlare
 								else if (index < 0)
 									throw new HttpException($"The {i}{Util.Nth(i)} header value is non existant.", status: Http.Status.BadRequest, keepalive: false);
 
-								string key = line.Substring(0, index);
+								string key = line.Substring(0, index).ToLower();
 								string value = line.Substring(index + 1).Trim();
 
 								headers[key] = value;
@@ -148,16 +150,18 @@ namespace SharpFlare
 							i = end + 1;
 							int bitlen = end - start; // either it is a slash, or it went out of bounds by 1 anyway
 
-							if (bitlen == 0) // is it an empty node? continue
+							// commented out as spec recommends // -> //, but not // -> /
+							/*if (bitlen == 0) // is it an empty node? continue
 								continue;
-							else if (bitlen == 1 && path[start] == '.')
+							else*/
+							if (bitlen == 1 && path[start] == '.')
 								continue;
 							else if (bitlen == 2 && path[start] == '.' && path[start + 1] == '.')
 								_setup_path_stack.RemoveLast();
 							else
 								_setup_path_stack.AddLast(path.Substring(start, bitlen));
 						}
-						this._Url.Path = path = $"/{string.Join("/", _setup_path_stack)}";
+						this._Url.Path = path = $"{string.Join("/", _setup_path_stack)}";
 						_setup_path_stack.Clear();
 					}
 					
@@ -189,7 +193,7 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 #endif
 					{
 						string v;
-						if (!headers.TryGetValue(key, out v))
+						if (!headers.TryGetValue(key.ToLower(), out v))
 							return "";
 						return v;
 					}
@@ -200,8 +204,21 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 using (var _prof = SharpFlare.Profiler.EnterFunction())
 #endif
 					{
-						headers[key] = value;
+						headers[key.ToLower()] = value;
 					}
+				}
+			}
+
+
+
+			public bool HeaderPresent(string index)
+			{
+#if SHARPFLARE_PROFILE
+using (var _prof = SharpFlare.Profiler.EnterFunction())
+#endif
+				{
+					string _;
+					return headers.TryGetValue(index.ToLower(), out _);
 				}
 			}
 
@@ -219,10 +236,17 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		public class Http1Response : Response
 		{
 			public bool Finalized { get; private set; }
-			List<Tuple<string, string>> headers = new List<Tuple<string, string>>();
+			Dictionary<string, string> headers = new Dictionary<string, string>();
 			SocketStream stream;
 			public bool KeepAlive { get; private set; }
+			bool IsHeadMethod;
+			bool XSendFile;
+			bool XAccelRedirect;
+			long RangeFrom;
+			long RangeTo;
+			string Etag;
 
+			public DateTime? LastModified { get; set; }
 			public Stream Content { get; set; }
 
 			public Http1Response() { }
@@ -248,12 +272,48 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 #endif
 				{
 					KeepAlive = req["Connection"].ToLower().Contains("keep-alive");
+					XSendFile = !string.IsNullOrWhiteSpace(req["X-Sendfile"]);
+					XAccelRedirect = !string.IsNullOrWhiteSpace(req["X-Accel-Redirect"]);
+					IsHeadMethod = req.Method == "HEAD";
+					RangeFrom = -1;
+					RangeTo = -1;
+					Etag = req["If-None-Match"];
+
+					if (req.HeaderPresent("Range"))
+					{
+						if (string.IsNullOrWhiteSpace(req["Range"]))
+							RangeFrom = -2; // send a range header later on when the request is finilized
+						else
+						{
+							Match x = Regex.Match(req["Range"], @"bytes=([0-9]+)\-([0-9]+)?");
+							string strfrom = x.Groups[1].Value;
+							string strto = x.Groups[2].Value;
+							if (!long.TryParse(strfrom, out RangeFrom))
+								throw new HttpException("Failed to parse Range from.", Status.BadRequest);
+							if (!string.IsNullOrWhiteSpace(strto))
+								if (!long.TryParse(strto, out RangeTo))
+									throw new HttpException("Failed to parse Range to.", Status.BadRequest);
+						}
+					}
+
+					if (XSendFile || XAccelRedirect)
+						throw new NotImplementedException();
 				}
 			}
 
 			public Status StatusCode { set; get; }
 
 			byte[] sendbuff = new byte[8192];
+			MD5 md5 = MD5.Create();
+			string Md5(string input)
+			{
+				byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+				StringBuilder sb = new StringBuilder();
+				for (int i = 0; i < hash.Length; i++)
+					sb.Append(hash[i].ToString("x2"));
+				return sb.ToString();
+			}
+
 			public async Task Finalize()
 			{
 #if SHARPFLARE_PROFILE
@@ -262,6 +322,60 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 				{
 					if (Finalized)
 						return;
+
+					// Things that might error out still, so don't finalize just yet
+					if (LastModified == null && Content != null)
+					{
+						if (Content is FileStream)
+						{
+							FileStream cfs = Content as FileStream;
+							LastModified = await FileAsync.GetLastWriteTimeUtcAsync(cfs.Name);
+						}
+					}
+
+					if (LastModified != null)
+					{
+						string etag = $"\"{Md5(LastModified.Value.ToHttpDate() + Content.Length.ToString())}\"";
+						if (etag == Etag)
+						{
+
+							Content.Dispose();
+							Content = null;
+							this.StatusCode = Status.NotModified;
+						}
+						else
+							this["Etag"] = etag;
+					}
+
+					long send_length = Content?.Length ?? 0;
+					{
+						{ // Range: support
+							if (RangeFrom != -1 && Content != null)
+							{
+								if (RangeFrom == -2)
+									this["Accept-Ranges"] = "bytes";
+								else
+								{
+									if (Content.Length <= RangeFrom || Content.Length <= RangeTo)
+									{
+										RangeFrom = RangeTo = -1; // reset these, else they interfer with the error page
+										this["Content-Range"] = $"bytes */{Content.Length}";
+										throw new HttpException("The requested range is out of bounds.", Status.RequestedRangeNotSatisfiable);
+									}
+
+									if (RangeTo < 0)
+										RangeTo = Content.Length;
+
+									send_length = RangeTo - RangeFrom;
+									this["Content-Range"] = $"bytes {RangeFrom}-{RangeFrom + send_length}/{Content.Length}";
+									this.StatusCode = Status.PartialContent;
+									Content.Seek(RangeFrom, SeekOrigin.Current);
+									
+									// stream.SetLength requires writing, which we don't want to do, so save the number of bytes to send into send_length
+								}
+							}
+						}
+					}
 					Finalized = true;
 
 					if (KeepAlive)
@@ -273,12 +387,12 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 					this["Date"] = DateTime.Now.ToHttpDate();
 
 					if (Content != null)
-						this["Content-Length"] = Content.Length.ToString();
+						this["Content-Length"] = send_length.ToString();
 
 					StringBuilder sb = new StringBuilder();
-					sb.Append($"HTTP/1.1 {StatusCode.code} {StatusCode.message}\n");
-					foreach (Tuple<string, string> tup in headers) // TODO: escape/encode these
-						sb.Append($"{tup.Item1}: {tup.Item2}\r\n");
+					sb.Append($"HTTP/1.1 {StatusCode.code} {StatusCode.message}\r\n");
+					foreach (KeyValuePair<string, string> kv in headers) // TODO: escape/encode these
+						sb.Append($"{kv.Key}: {kv.Value}\r\n");
 					sb.Append($"\r\n");
 
 					string s = sb.ToString();
@@ -286,13 +400,14 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 
 					await stream.Write(sendbuff, 0, count).ConfigureAwait(false);
 
-					if (Content != null)
+					if (Content != null && !IsHeadMethod)
 					{
 						while (true)
 						{
-							count = await Content.ReadAsync(sendbuff, 0, sendbuff.Length).ConfigureAwait(false);
+							count = await Content.ReadAsync(sendbuff, 0, (int)Math.Min((long)sendbuff.Length, send_length)).ConfigureAwait(false);
 							if (count == 0)
 								break;
+							send_length -= count;
 							await stream.Write(sendbuff, 0, count).ConfigureAwait(false);
 						}
 
@@ -313,7 +428,7 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 using (var _prof = SharpFlare.Profiler.EnterFunction())
 #endif
 					{
-						headers.Add(new Tuple<string, string>(index, value));
+						headers[index] = value;
 					}
 				}
 			}

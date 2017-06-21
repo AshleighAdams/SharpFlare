@@ -14,7 +14,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;SHARPFLARE_PROFILE</DefineConstants>
+    <DefineConstants>DEBUG;NET_STANDARD</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <WarningsAsErrors>CS4014</WarningsAsErrors>
@@ -31,18 +31,29 @@
     <LangVersion>6</LangVersion>
     <ErrorReport>prompt</ErrorReport>
     <Prefer32Bit>false</Prefer32Bit>
+    <DefineConstants>NET_STANDARD</DefineConstants>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Parent Include="..\..\Source\Main\**\*.cs"/>
+    <Parent Include="..\..\Source\Main\**\*.cs" />
     <Compile Include="@(Parent)">
       <Link>..\..\Source\Main\%(Parent.Filename).cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Http1.csproj">
+      <Project>{4629a8eb-972b-4375-94e9-5e1ce79f142c}</Project>
+      <Name>Http1</Name>
+      <Private>False</Private>
+    </ProjectReference>
     <ProjectReference Include="SharpFlareCore.csproj">
       <Project>{8BBC5F9A-EF4F-498A-ABB0-37D240584891}</Project>
       <Name>SharpFlareCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="TestSite.csproj">
+      <Project>{c591caf1-b8eb-4b42-b746-7814f70e567e}</Project>
+      <Name>TestSite</Name>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

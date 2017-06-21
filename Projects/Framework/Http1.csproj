@@ -3,10 +3,10 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C591CAF1-B8EB-4B42-B746-7814F70E567E}</ProjectGuid>
+    <ProjectGuid>{4629A8EB-972B-4375-94E9-5E1CE79F142C}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>SharpFlare</RootNamespace>
-    <AssemblyName>Site.Test</AssemblyName>
+    <RootNamespace>SharpFlare.Http1</RootNamespace>
+    <AssemblyName>Plugin.Http1</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -14,7 +14,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\Sites\</OutputPath>
+    <OutputPath>bin\Debug\Plugins\</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,7 +25,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\Sites\</OutputPath>
+    <OutputPath>bin\Release\Plugins\</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
@@ -40,16 +40,16 @@
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
-    <Parent Include="..\..\Source\TestSite\**\*.cs" />
+    <Parent Include="..\..\Source\Http1\**\*.cs" />
     <Compile Include="@(Parent)">
-      <Link>..\..\Source\TestSite\%(Parent.Filename).cs</Link>
+      <Link>..\..\Source\Http1\%(Parent.Filename).cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="SharpFlareCore.csproj">
       <Project>{8BBC5F9A-EF4F-498A-ABB0-37D240584891}</Project>
       <Name>SharpFlareCore</Name>
-      <Private>True</Private>
+      <Private>False</Private>
     </ProjectReference>
   </ItemGroup>
 </Project>

@@ -10,7 +10,7 @@ using SharpFlare.Http;
 
 namespace SharpFlare
 {
-	public static class HttpListener
+	public static class Http1Listener
 	{
 		public static async Task ListenAsync(int port, IPAddress ip)
 		{
@@ -146,6 +146,10 @@ namespace SharpFlare
 							{
 								break;
 							}
+							catch (IOException e) when (e.InnerException is SocketException)
+							{
+								break;
+							}
 							catch (NotImplementedException ex)
 							{
 								if (res.Finalized)
@@ -153,7 +157,7 @@ namespace SharpFlare
 										   // can't be sent anymore, so just close the connection
 										   //hook.Call
 								res.StatusCode = Status.NotImplemented;
-								await Hooks.Call("Error", req, res, new HttpException(ex, "not imp", Status.NotImplemented)).ConfigureAwait(false);
+								await Hooks.Call("Error", req, res, new HttpException(ex, "Not implimented.", Status.NotImplemented)).ConfigureAwait(false);
 							}
 							catch (HttpException ex)
 							{

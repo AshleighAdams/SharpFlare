@@ -29,8 +29,10 @@ namespace SharpFlare
 			["/sharpflare/mountain-silhouette.png"] = "image/png"
 		};
 
+		static DateTime LastModified = DateTime.UtcNow;
 		public static async Task SendErrorFile(Request req, Response r, string[] args)
 		{
+			r.LastModified = LastModified;
 			r["Content-Type"] = ContentType[req.Url.Path];
 			r.Content = new MemoryStream(Files[req.Url.Path]);
 		}
