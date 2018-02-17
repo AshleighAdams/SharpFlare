@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SharpFlare.Http1\SharpFlare.Http1.csproj" />
+    <ProjectReference Include="..\SharpFlare\SharpFlare.csproj" />
+    <ProjectReference Include="..\TestSite\TestSite.csproj" />
+  </ItemGroup>
+
+</Project>

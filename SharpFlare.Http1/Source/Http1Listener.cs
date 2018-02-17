@@ -40,6 +40,7 @@ namespace SharpFlare
 				if (sock == null)
 					break;
 
+				//TaskPool.Run(async () => await HandleSocket(sock));
 				Task.Run(() => HandleSocket(sock)).ConfigureAwait(false);
 			}
 		}
@@ -54,6 +55,7 @@ namespace SharpFlare
 					break;
 
 #pragma warning disable 4014
+				//TaskPool.Run(async () => await HandleSocket(sock));
 				Task.Run(() => HandleSocket(sock)).ConfigureAwait(false);
 #pragma warning restore 4014
 			}
@@ -157,7 +159,7 @@ namespace SharpFlare
 										   // can't be sent anymore, so just close the connection
 										   //hook.Call
 								res.StatusCode = Status.NotImplemented;
-								await Hooks.Call("Error", req, res, new HttpException(ex, "Not implimented.", Status.NotImplemented)).ConfigureAwait(false);
+								await Hooks.Call("Error", req, res, new HttpException(ex, "Not implemented.", Status.NotImplemented)).ConfigureAwait(false);
 							}
 							catch (HttpException ex)
 							{

@@ -21,12 +21,14 @@ public class Http1
 
 	public void Load()
 	{
-		IPv6Listeners[DefaultPort] = Http1Listener.ListenAsync(DefaultPort, IPAddress.IPv6Any);
-		IPv4Listeners[DefaultPort] = Http1Listener.ListenAsync(DefaultPort, IPAddress.Any);
+		Http1Listener.Listen(DefaultPort, IPAddress.IPv6Any);
+		Http1Listener.Listen(DefaultPort, IPAddress.Any);
+		//this.IPv6Listeners[DefaultPort] = Http1Listener.ListenAsync(DefaultPort, IPAddress.IPv6Any);
+		//this.IPv4Listeners[DefaultPort] = Http1Listener.ListenAsync(DefaultPort, IPAddress.Any);
 
 		Hooks.Add("NewHost", "HTTP/1.X Listener", async delegate (object[] args)
 		{
-			HostAdded((string)args[0]);
+			this.HostAdded((string)args[0]);
 			return false;
 		});
 	}

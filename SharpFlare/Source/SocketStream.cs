@@ -154,7 +154,7 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 				}
 
 				// we don't have any lined up, fetch some more
-				if (PeekLength == PeekPos)
+				if (this.PeekLength == PeekPos)
 					await Peek(max_length);
 
 				while (true)
@@ -167,7 +167,7 @@ using (var _prof_test = SharpFlare.Profiler.EnterFunction("Tester"))
 					if (index >= 0)
 					{
 						index++; // 0th place = 1 length
-						PeekPos += index;
+						this.PeekPos += index;
 
 						if (buffer != null)
 							Buffer.BlockCopy(PeekBuffer, 0, buffer, pos, index);
@@ -223,14 +223,14 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 				{
 					for (int i = pos; i < length; i++)
 					{
-						await BaseStream.WriteAsync(buffer, i, 1);
-						await BaseStream.FlushAsync();
+						await this.BaseStream.WriteAsync(buffer, i, 1);
+						await this.BaseStream.FlushAsync();
 						await Task.Delay(1);
 					}
 				}
 				else
 					//await BufferedWriteStream.WriteAsync(buffer, pos, length).ConfigureAwait(false);
-					await BufferedWriteStream.WriteAsync(buffer, pos, length).ConfigureAwait(false);
+					await this.BufferedWriteStream.WriteAsync(buffer, pos, length).ConfigureAwait(false);
 			}
 		}
 

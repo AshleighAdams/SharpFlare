@@ -11,6 +11,8 @@ namespace SharpFlare
 
 		public UnrestrictedPlugin(string path)
 		{
+			path = path.Replace('/', Path.DirectorySeparatorChar);
+
 			var asm = Assembly.LoadFile(path);
 			var name = Path.GetFileNameWithoutExtension(path).Substring("Plugin.".Length).Replace(".", " ").Replace(" ", "_");
 			var t = asm.GetType(name);

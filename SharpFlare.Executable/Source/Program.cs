@@ -153,12 +153,14 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 		[LoaderOptimization(LoaderOptimization.MultiDomain)]
 		static public int Main(string[] args)
 		{
+			ThreadPool.SetMinThreads(4, 4);
+
 			System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 			var fullpath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "/";
 
 			List<UnrestrictedPlugin> plugins = new List<UnrestrictedPlugin>();
-			foreach (string dir in Directory.GetFiles("Plugins/", "Plugin.*.dll", SearchOption.AllDirectories))
-				plugins.Add(new UnrestrictedPlugin(fullpath + dir));
+			foreach (string dir in Directory.GetFiles(fullpath, "Plugin.*.dll", SearchOption.AllDirectories))
+				plugins.Add(new UnrestrictedPlugin(dir));
 
 			if (!CLI.Options.Parse(args))
 				return 1;
@@ -188,13 +190,18 @@ using (var _prof = SharpFlare.Profiler.EnterFunction())
 			Host.Any.Route("/async", GenerateAsyncMethods);
 			DefaultErrorHandler.Setup();
 
-
+			
 			List<SitePlugin> sites = new List<SitePlugin>();
-			foreach (string dir in Directory.GetFiles("Sites/", "Site.*.dll", SearchOption.AllDirectories))
-				sites.Add(new SitePlugin(fullpath + dir));
-			
+
+			foreach (string dir in Directory.GetFiles(fullpath, "Site.*.dll", SearchOption.AllDirectories))
+				sites.Add(new SitePlugin(dir));
+
+			if (Directory.Exists("Sites/"))
+				foreach (string dir in Directory.GetFiles("Sites/", "Site.*.dll", SearchOption.AllDirectories))
+					sites.Add(new SitePlugin(dir));
+
 			//Task.WaitAll(ipv4, ipv6);
-			
+
 			while (true)
 				Task.Delay(-1).Wait();
 			

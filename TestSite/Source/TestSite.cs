@@ -27,6 +27,13 @@ public class Test
 		res.Content = new MemoryStream(Encoding.UTF8.GetBytes("Plugin says hello"));
 	}
 
+	[Route("/test_file.bin")]
+	public async Task TestFile(Request req, Response res, string[] args)
+	{
+		res["Content-Type"] = "binary/octet-stream";
+		res.Content = await FileAsync.OpenReadAsync(@"D:\Ashleigh\Downloads\Long Term\A.Ghost.Story.2017.1080p.BRRip.6CH.MkvCage.mkv");
+	}
+
 	[Route("/test/([a-zA-Z0-9 ]+)")]
 	public async Task TestPattern(Request req, Response res, string[] args)
 	{
